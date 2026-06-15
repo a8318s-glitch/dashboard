@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>平面媒體教材製作申請數據智慧分析與業務管理儀表板</title>
+    <!-- 引入 Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
     <script>
@@ -35,6 +39,7 @@
 </head>
 <body class="bg-slate-50/50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
+    <!-- 頂部導覽列 -->
     <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 px-6 py-4 flex items-center justify-between shadow-glass">
         <div class="flex items-center space-x-3.5">
             <div class="bg-gradient-to-tr from-rose-400 to-orange-300 text-white p-2.5 rounded-xl shadow-md shadow-rose-500/10">
@@ -55,8 +60,10 @@
         </div>
     </header>
 
+    <!-- 主要工作區 -->
     <main class="flex-1 p-6 max-w-[1500px] w-full mx-auto space-y-6">
         
+        <!-- 自動同步加載與手動備援區 -->
         <div id="dropzone" class="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-10 shadow-soft text-center transition-all duration-300 hover:border-rose-300 group">
             <div class="max-w-md mx-auto flex flex-col items-center justify-center space-y-4">
                 <div class="p-4 bg-slate-50 rounded-2xl text-slate-400 group-hover:bg-rose-50 group-hover:text-rose-400 transition-colors shadow-inner">
@@ -74,9 +81,12 @@
             </div>
         </div>
 
+        <!-- 主要系統內容看板區 -->
         <div id="dashboardArea" class="hidden space-y-6">
             
+            <!-- 分頁一：數據儀表板 -->
             <div id="tabDashboard" class="tab-content space-y-6">
+                <!-- 交叉篩選控制列 -->
                 <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex flex-wrap gap-4 items-center justify-between">
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 w-full flex-1">
                         <div class="flex flex-col space-y-1">
@@ -115,6 +125,7 @@
                     </div>
                 </div>
 
+                <!-- 業務狀態量能指標 -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between relative overflow-hidden group">
                         <div class="space-y-0.5">
@@ -154,6 +165,7 @@
                     </div>
                 </div>
 
+                <!-- 業務統計量能圖表 -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex flex-col justify-between">
                         <div class="flex items-center justify-between mb-3 border-b border-slate-50 pb-2">
@@ -175,6 +187,7 @@
                     </div>
                 </div>
 
+                <!-- 榮譽榜與原始數據明細 -->
                 <div class="bg-white border border-slate-100 rounded-2xl shadow-soft overflow-hidden">
                     <div class="px-5 py-3.5 border-b border-slate-50 flex flex-wrap gap-4 items-center justify-between bg-slate-50/20">
                         <h4 class="font-bold text-slate-800 text-xs">榮譽榜與資料庫明細主表</h4>
@@ -205,10 +218,12 @@
                                 </tr>
                             </thead>
                             <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-600 font-medium text-xs">
-                                </tbody>
+                                <!-- 由 JS 動態注入 -->
+                            </tbody>
                         </table>
                     </div>
 
+                    <!-- 資料分頁組件 -->
                     <div class="px-5 py-3 bg-slate-50/20 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
                         <div id="pageInfo">1 / 1 頁 (共 0 筆)</div>
                         <div class="flex items-center space-x-1.5">
@@ -219,11 +234,12 @@
                 </div>
             </div>
 
+            <!-- 分頁二：業務進度追蹤 -->
             <div id="tabTracker" class="tab-content space-y-6 hidden">
                 <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between">
                     <div>
                         <h4 class="font-bold text-slate-800 text-sm">進行中業務里程碑追蹤看板</h4>
-                        <p class="text-[11px] text-slate-400 mt-0.5">排序規則：依據「預定完成日」由新到舊展示最新案件進度</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">排序規則：依據新版「預定完成日」由新到舊展示最新案件進度</p>
                     </div>
                     <div class="w-64">
                         <input type="text" id="trackerSearch" placeholder="搜尋項目、負責人、狀態..." class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all">
@@ -231,12 +247,14 @@
                 </div>
 
                 <div id="trackerContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    </div>
+                    <!-- 由工作表 2 資料動態注入卡片 -->
+                </div>
             </div>
 
         </div>
     </main>
 
+    <!-- 核心數據運算與連線腳本核心區 -->
     <script>
         // ==========================================
         // 💡 1. 填入你部署好的最新 GAS 網址（必須以 https:// 開頭）
@@ -263,7 +281,7 @@
         function convertCategoryToChinese(rawType) {
             if (!rawType) return '其他';
             let str = String(rawType).trim();
-            if (str === '') return '其他';
+            if (str === '') return '反饋其他';
             
             let parts = str.split(/[\s,，、/]+/);
             let translatedParts = parts.map(p => {
@@ -294,44 +312,32 @@
         }
 
         // ==========================================
-        // 💡 3. 大數據智慧快取核心
+        // 🌟 3. 改用全新安全無阻礙 JSONP 跨網域撈取大數據
         // ==========================================
-        async function loadGoogleSheetData() {
+        function loadGoogleSheetData() {
             if (!MY_GAS_URL || MY_GAS_URL.includes("這裡貼上")) return;
             
-            const CACHE_KEY = 'chimei_dashboard_cache_v5';
-            const CACHE_TIME_KEY = 'chimei_dashboard_cache_time_v5';
-            const FIVE_MINUTES = 5 * 60 * 1000; 
+            // 💡 為了強迫解開剛才卡死的舊數據，我們直接把快取完全跳過，強迫直接跟雲端拿最新資料！
+            console.log("🌐 啟用安全 JSONP 機制，直接與 Google 雲端庫同步大數據...");
             
-            const now = new Date().getTime();
-            const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
-            const cachedData = localStorage.getItem(CACHE_KEY);
-
-            if (cachedData && cachedTime && (now - cachedTime < FIVE_MINUTES)) {
-                console.log("⚡ 觸發極速本地快取秒讀數據...");
-                try {
-                    const json = JSON.parse(cachedData);
+            // 建立動態 JSONP 腳本標籤
+            const script = document.createElement('script');
+            // 在全域環境下註冊一個給 Google 呼叫的果實回傳函式
+            window.handleGasResponse = function(json) {
+                if (json && json.status === "success") {
                     processAndRenderData(json);
-                    return;
-                } catch(e) { localStorage.removeItem(CACHE_KEY); }
-            }
+                } else {
+                    console.error("GAS 後端回傳失敗:", json);
+                }
+                // 執行完後拔除腳本標籤，維持環境整潔
+                document.body.removeChild(script);
+                delete window.handleGasResponse;
+            };
 
-            try {
-                console.log("🌐 正在跨網域同步 Google Sheet 數據...");
-                const response = await fetch(MY_GAS_URL);
-                const json = await response.json();
-                
-                if (json.status === "success") {
-                    localStorage.setItem(CACHE_KEY, JSON.stringify(json));
-                    localStorage.setItem(CACHE_TIME_KEY, now.toString());
-                    processAndRenderData(json);
-                }
-            } catch (error) {
-                console.error("雲端連線讀取失敗:", error);
-                if (cachedData) {
-                    processAndRenderData(JSON.parse(cachedData));
-                }
-            }
+            // 💡 強迫對 GAS 網址加上 callback 參數
+            const separator = MY_GAS_URL.includes('?') ? '&' : '?';
+            script.src = MY_GAS_URL + separator + "callback=handleGasResponse&_ts=" + new Date().getTime();
+            document.body.appendChild(script);
         }
 
         function processAndRenderData(json) {
@@ -366,7 +372,7 @@
                     '申請單號': String(item['申請單號'] || '').trim() || '-',
                     '院區': String(item['院區'] || '永康總院').trim(),
                     '建立日期': cleanDateStr(item['申請日期']),
-                    '需用日期': cleanDateStr(item['橫需用日期'] || item['需用日期']),
+                    '需用日期': cleanDateStr(item['需用日期'] || item['橫需用日期']),
                     '完成日期': cleanDateStr(item['完成日期']),
                     '科室': String(item['單位代碼'] || item['科室'] || '不分科').trim(),     
                     '申請人': String(item['申請人'] || '').trim() || '-',
@@ -380,7 +386,6 @@
                 };
             });
 
-            // 💡 徹底移除語法出錯的贅字列，完美修正
             trackerData = (json.sheet2Data || []).filter(item => {
                 if (!item) return false;
                 return (item['項目'] && String(item['項目']).trim() !== '') || (item['科室項目'] && String(item['科室項目']).trim() !== '');
@@ -415,7 +420,7 @@
                 return b['預定完成日'].localeCompare(a['預定完成日']);
             });
 
-            // 關閉讀取畫面
+            // 🌟 關閉讀取畫面，大數據面紗亮出！
             const dropzone = document.getElementById('dropzone');
             const dashboardArea = document.getElementById('dashboardArea');
             if (dropzone) dropzone.classList.add('hidden');
@@ -518,7 +523,7 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             }));
 
-            // 2. 業務排行榜
+            // 2. 業務排行榜 (離職同仁精準變亮灰色)
             const designerMap = {};
             data.forEach(item => {
                 if(item['承辦人員']) { designerMap[item['承辦人員']] = (designerMap[item['承辦人員']] || 0) + 1; }
@@ -667,7 +672,7 @@
                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             <span>預定完成日：${item['預定完成日'] || '-'}</span>
                         </div>
-                        <p class="text-slate-400 text-[11px] mb-4 line-clamp-2">${item['目前進度說明'] || '暫無進度說明'}</p>
+                        <p class="text-slate-400 text-[11px] mb-4 line-clamp-2">${item['currently進度說明'] || item['目前進度說明'] || '暫無進度說明'}</p>
                     </div>
                     <div>
                         <div class="flex justify-between items-center text-[10px] text-slate-400 mb-1 font-medium">
