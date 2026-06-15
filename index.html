@@ -294,13 +294,13 @@
         }
 
         // ==========================================
-        // 💡 3. 大數據記憶體快取核心（帶有防崩潰安全鎖）
+        // 💡 3. 大數據智慧快取核心
         // ==========================================
         async function loadGoogleSheetData() {
             if (!MY_GAS_URL || MY_GAS_URL.includes("這裡貼上")) return;
             
-            const CACHE_KEY = 'chimei_dashboard_cache_v4';
-            const CACHE_TIME_KEY = 'chimei_dashboard_cache_time_v4';
+            const CACHE_KEY = 'chimei_dashboard_cache_v5';
+            const CACHE_TIME_KEY = 'chimei_dashboard_cache_time_v5';
             const FIVE_MINUTES = 5 * 60 * 1000; 
             
             const now = new Date().getTime();
@@ -308,16 +308,16 @@
             const cachedData = localStorage.getItem(CACHE_KEY);
 
             if (cachedData && cachedTime && (now - cachedTime < FIVE_MINUTES)) {
-                console.log("⚡ 觸發快取機制讀取...");
+                console.log("⚡ 觸發極速本地快取秒讀數據...");
                 try {
                     const json = JSON.parse(cachedData);
                     processAndRenderData(json);
                     return;
-                } catch(e) { localStorage.removeItem(CACHE_KEY); } // 萬一快取損壞則清除
+                } catch(e) { localStorage.removeItem(CACHE_KEY); }
             }
 
             try {
-                console.log("🌐 正在同步 Google Sheet 數據...");
+                console.log("🌐 正在跨網域同步 Google Sheet 數據...");
                 const response = await fetch(MY_GAS_URL);
                 const json = await response.json();
                 
@@ -327,7 +327,7 @@
                     processAndRenderData(json);
                 }
             } catch (error) {
-                console.error("網路連線或讀取失敗:", error);
+                console.error("雲端連線讀取失敗:", error);
                 if (cachedData) {
                     processAndRenderData(JSON.parse(cachedData));
                 }
@@ -337,10 +337,8 @@
         function processAndRenderData(json) {
             const seenHealthLeaflets = new Set();
             
-            // 💡 增加防空行卡死安全過濾鎖
             allData = (json.sheet1Data || []).filter(item => {
                 if (!item) return false;
-                // 如果整列連最起碼的「申請單號」或「製作者」都沒有，代表是誤抓的空白列，直接安全跳過
                 const hasId = item['申請單號'] && String(item['申請單號']).trim() !== '';
                 const hasMaker = item['製作者'] && String(item['製作者']).trim() !== '';
                 if (!hasId && !hasMaker) return false;
@@ -368,7 +366,7 @@
                     '申請單號': String(item['申請單號'] || '').trim() || '-',
                     '院區': String(item['院區'] || '永康總院').trim(),
                     '建立日期': cleanDateStr(item['申請日期']),
-                    '需用日期': cleanDateStr(item['需用日期']),
+                    '需用日期': cleanDateStr(item['橫需用日期'] || item['需用日期']),
                     '完成日期': cleanDateStr(item['完成日期']),
                     '科室': String(item['單位代碼'] || item['科室'] || '不分科').trim(),     
                     '申請人': String(item['申請人'] || '').trim() || '-',
@@ -382,7 +380,7 @@
                 };
             });
 
-            // 💡 工作表 2 增加防空行卡死安全過濾鎖
+            // 💡 徹底移除語法出錯的贅字列，完美修正
             trackerData = (json.sheet2Data || []).filter(item => {
                 if (!item) return false;
                 return (item['項目'] && String(item['項目']).trim() !== '') || (item['科室項目'] && String(item['科室項目']).trim() !== '');
@@ -417,7 +415,7 @@
                 return b['預定完成日'].localeCompare(a['預定完成日']);
             });
 
-            // 🌟 關閉讀取畫面，亮出數據看板
+            // 關閉讀取畫面
             const dropzone = document.getElementById('dropzone');
             const dashboardArea = document.getElementById('dashboardArea');
             if (dropzone) dropzone.classList.add('hidden');
@@ -520,7 +518,7 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             }));
 
-            // 2. 業務排行榜 (在職橘/離職灰 精準比對邏輯)
+            // 2. 業務排行榜
             const designerMap = {};
             data.forEach(item => {
                 if(item['承辦人員']) { designerMap[item['承辦人員']] = (designerMap[item['承辦人員']] || 0) + 1; }
@@ -628,7 +626,7 @@
             const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
             document.getElementById('pageInfo').textContent = `${currentPage} / ${totalPages} 頁 (共 ${totalRows} 筆)`;
             document.getElementById('btnPrevPage').disabled = (currentPage === 1);
-            document.getElementById('btnNextPage').disabled = (currentPage === totalPages);
+            document.getElementById('btnNextPage').disabled = (totalPages <= currentPage);
         }
 
         // 業務進度追蹤卡片看板
@@ -685,9 +683,6 @@
             });
         }
 
-        // ==========================================
-        // 💡 6. 本機上傳與示範數據解析
-        // ==========================================
         function handleFileSelection(file) {
             if(!file) return;
             const reader = new FileReader();
@@ -716,9 +711,6 @@
             });
         }
 
-        // ==========================================
-        // 💡 7. 全域事件監聽
-        // ==========================================
         window.addEventListener('DOMContentLoaded', () => {
             loadGoogleSheetData();
 
