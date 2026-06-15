@@ -257,6 +257,77 @@
         // 全域核心變數結構
         let allData = [];
         let trackerData = [];
+        // ==========================================
+// ⚡ Google Sheets 極速背景連線模組 (完全不破壞原本精緻樣式)
+// ==========================================
+const MY_GAS_URL = "這裡貼上您部署好的GAS網頁應用程式網址";
+
+async function fetchCloudData() {
+    if (!MY_GAS_URL || MY_GAS_URL.includes("這裡貼上")) return;
+    try {
+        const response = await fetch(MY_GAS_URL);
+        const json = await response.json();
+        if (json.status === "success") {
+            // 1. 轉譯第一個工作表
+            allData = (json.sheet1Data || []).map(item => {
+                let year = "2026", month = "1";
+                let dateStr = item['申請日期'] || item['完成日期'] || "";
+                if (dateStr) {
+                    let parts = dateStr.toString().split(/[-/]/);
+                    if (parts.length >= 2) { 
+                        year = parts[0].toString().trim(); 
+                        month = parseInt(parts[1], 10).toString(); 
+                    }
+                }
+                return {
+                    '申請單號': String(item['申請單號'] || '').trim(),
+                    '院區': String(item['院區'] || '總院').trim(),
+                    '建立日期': String(item['申請日期'] || '').trim(),
+                    '需用日期': String(item['需用日期'] || '').trim(),
+                    '完成日期': String(item['完成日期'] || '').trim(),
+                    '科室': String(item['單位代碼'] || '不分科').trim(),
+                    '申請人': String(item['申請人'] || '').trim(),
+                    '教材類別': String(item['教材類別'] || '平面媒體').trim(),
+                    '承辦人員': String(item['製作者'] || '未指定').trim(),
+                    '結案狀態': String(item['狀態'] || '未結案').trim(),
+                    '品名': `教材製作 (${String(item['教材類別'] || '平面')})`,
+                    '總計金額': 0,
+                    '年度': year,
+                    '月份': month
+                };
+            });
+
+            // 2. 轉譯第二個工作表
+            trackerData = (json.sheet2Data || []).map(item => {
+                let pct = 50;
+                if (String(item['狀態'] || '').trim() === '已結案') pct = 100;
+                else if (item['進度百分比']) pct = parseInt(item['進度百分比'], 10) || 50;
+                return {
+                    '科室項目': String(item['項目'] || item['科室項目'] || '未命名項目').trim(),
+                    '目前進度說明': String(item['備註說明'] || item['目前進度說明'] || '暫無進度說明').trim(),
+                    '承辦人': String(item['參與人員'] || item['承辦人'] || '未分派').trim(),
+                    '進度百分比': pct,
+                    '預定完成日': String(item['預定完成日'] || '即將完成').trim()
+                };
+            });
+
+            // 3. 隱藏上傳區，觸發您原本網頁寫好的精美渲染功能
+            if(document.getElementById('dropzone')) document.getElementById('dropzone').classList.add('hidden');
+            if(document.getElementById('dashboardArea')) document.getElementById('dashboardArea').classList.remove('hidden');
+            
+            // 執行您原本網頁內建的渲染（名稱必須與您原本網頁完全一致）
+            if (typeof initFilters === "function") initFilters();
+            if (typeof applyFilters === "function") applyFilters();
+            if (typeof renderTrackerCards === "function") renderTrackerCards();
+        }
+    } catch (error) {
+        console.error("雲端讀取失敗，保持原本上傳介面:", error);
+    }
+}
+
+// 網頁一載入，立刻啟動背景預載，完全不卡網頁速度
+window.addEventListener('DOMContentLoaded', fetchCloudData);
+// ==========================================
         let currentPage = 1;
         let rowsPerPage = 10;
         let currentFilteredTableData = [];
