@@ -12,7 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SheetJS (Excel 檔案解析) -->
+    <!-- SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
     <script>
@@ -39,7 +39,7 @@
 </head>
 <body class="bg-slate-50/50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
-    <!-- 頂部導覽列 (純中文介面、糖果配色細節) -->
+    <!-- 頂部導覽列 -->
     <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 px-6 py-4 flex items-center justify-between shadow-glass">
         <div class="flex items-center space-x-3.5">
             <div class="bg-gradient-to-tr from-rose-400 to-orange-300 text-white p-2.5 rounded-xl shadow-md shadow-rose-500/10">
@@ -239,7 +239,7 @@
                 <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between">
                     <div>
                         <h4 class="font-bold text-slate-800 text-sm">進行中業務里程碑追蹤看板</h4>
-                        <p class="text-[11px] text-slate-400 mt-0.5">排序規則：依預定完成日「由新到舊」優先展示最新專案</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">排序規則：優先依照新版的「預定完成日」由新到舊展示最新案件進度</p>
                     </div>
                     <div class="w-64">
                         <input type="text" id="trackerSearch" placeholder="搜尋項目、負責人、進度..." class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all">
@@ -269,7 +269,7 @@
         let currentFilteredTableData = [];
         let chartInstances = {};
 
-        // 💡 2. 官方指定在職同仁名單控制中心
+        // 💡 2. 官方指定 9 人在職同仁名單（排行榜與表格完全依據此陣列清洗格式與顏色）
         const ACTIVE_EMPLOYEES = ['蕭麗香', '林雨蕎', '許召玟', '李偲詩', '李岱璇', '陳慧娟', '葉品妤', '陳琬婷', '黃怡瑄', '未指定'];
 
         // 教材類別對應字典
@@ -278,7 +278,6 @@
             '6': '影像處理', '7': '出版類', '8': 'Web類', '9': '簡報', '10': '現場拍', '11': '其他'
         };
 
-        // 強力多重代碼清洗轉譯器：能將 "4, 7, 8" 完美切開洗成 "衛教單張、出版類、Web類"
         function convertCategoryToChinese(rawType) {
             if (!rawType) return '其他';
             let str = String(rawType).trim();
@@ -293,7 +292,6 @@
             return translatedParts.length > 0 ? translatedParts.join('、') : '其他';
         }
 
-        // 核心時間切碎清洗器：徹底消滅台北標準時間，強制轉化為乾淨精緻的 YYYY-MM-DD 格式
         function cleanDateStr(str) {
             if (!str) return '-';
             let s = String(str).trim();
@@ -319,8 +317,8 @@
         async function loadGoogleSheetData() {
             if (!MY_GAS_URL || MY_GAS_URL.includes("這裡貼上")) return;
             
-            const CACHE_KEY = 'chimei_dashboard_cache';
-            const CACHE_TIME_KEY = 'chimei_dashboard_cache_time';
+            const CACHE_KEY = 'chimei_dashboard_cache_v2';
+            const CACHE_TIME_KEY = 'chimei_dashboard_cache_time_v2';
             const FIVE_MINUTES = 5 * 60 * 1000; 
             
             const now = new Date().getTime();
@@ -353,7 +351,6 @@
             }
         }
 
-        // 核心數據轉譯與渲染中心
         function processAndRenderData(json) {
             const seenHealthLeaflets = new Set();
             
@@ -399,6 +396,7 @@
                 };
             });
 
+            // 💡 讀取工作表 2 傳過來的最新日期欄位「預定完成日」
             trackerData = (json.sheet2Data || []).filter(item => {
                 return item['項目'] || item['科室項目'];
             }).map(item => {
@@ -414,16 +412,19 @@
                     pct = 50; 
                 }
 
+                // 同時保險撈取工作表2中「預定完成日」或可能被取名為「交付日期」的欄位
+                let rawDate = item['預定完成日'] || item['交付日期'] || item['更新日期'] || '';
+
                 return {
                     '科室項目': String(item['項目'] || item['科室項目'] || '未命名項目').trim(),
                     '目前進度說明': String(item['備註說明'] || item['目前進度說明'] || '暫無進度說明').trim(),
                     '承辦人': String(item['參與人員'] || item['承辦人'] || '未分派').trim(),
                     '進度百分比': pct,
-                    '預定完成日': cleanDateStr(item['預定完成日'] || item['交付日期'])
+                    '預定完成日': cleanDateStr(rawDate)
                 };
             });
 
-            // 💡 排序機制優化：讓進度追蹤卡片一律依照「預定完成日」從新到舊排序（未來/最近的排在最前面）
+            // 💡 依照工作表 2 傳來的最新日期欄位，由新到舊「從頭排序」
             trackerData.sort((a, b) => {
                 if (a['預定完成日'] === '-' || !a['預定完成日']) return 1;
                 if (b['預定完成日'] === '-' || !b['預定完成日']) return -1;
@@ -498,7 +499,7 @@
             const rate = data.length ? ((closedCount / data.length) * 100).toFixed(1) : '0.0';
             document.getElementById('kpiCompletionRate').textContent = `${rate}%`;
 
-            const unclosedCount = data.filter(item => item['結案狀態'] !== '已結案' && item['結案狀態'] !== '已完成').length;
+            const unclosedCount = data.filter(item => item['結案狀態'] !== '開設' && item['結案狀態'] !== '已結案' && item['結案狀態'] !== '已完成').length;
             document.getElementById('kpiPendingOrders').textContent = unclosedCount.toLocaleString();
             document.getElementById('kpiTrackerCount').textContent = trackerData.length.toLocaleString();
         }
@@ -534,18 +535,18 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             }));
 
-            // 🌟 2. 業務排行榜（加入離職人員自動變灰邏輯）
+            // 🌟 2. 業務排行榜（強力防呆去空格比對，保證楊、羅等前同仁完美變灰）
             const designerMap = {};
             data.forEach(item => {
                 if(item['承辦人員']) { designerMap[item['承辦人員']] = (designerMap[item['承辦人員']] || 0) + 1; }
             });
             const designers = Object.keys(designerMap).sort((a,b) => designerMap[b] - designerMap[a]);
             
-            // 💡 動態產生色彩陣列：在職顯示溫暖橘、離職人員顯示精緻灰
+            // 💡 精準比對顏色：如果在職就給橘色，如果比對失敗（如離職同仁名字）一律給亮灰色
             const barColors = designers.map(name => {
-                const cleanName = String(name).trim();
-                const isActive = ACTIVE_EMPLOYEES.some(emp => emp.trim() === cleanName);
-                return isActive ? '#fb923c' : '#e2e8f0'; 
+                const cleanName = String(name).replace(/\s+/g, ''); // 徹底拔除一切不小心按到的空白鍵
+                const isActive = ACTIVE_EMPLOYEES.some(emp => emp.replace(/\s+/g, '') === cleanName);
+                return isActive ? '#fb923c' : '#cbd5e1'; 
             });
 
             createOrUpdateChart('chartDesignerOutput', 'bar', () => ({
@@ -555,7 +556,7 @@
                     datasets: [{
                         label: '接單總量',
                         data: designers.map(d => designerMap[d]),
-                        backgroundColor: barColors, // 注入自訂顏色矩陣
+                        backgroundColor: barColors, 
                         borderRadius: 6
                     }]
                 },
@@ -620,8 +621,8 @@
                     ? 'bg-emerald-50 text-emerald-600 ring-emerald-500/10' 
                     : 'bg-amber-50 text-amber-600 ring-amber-500/10';
 
-                const cleanName = String(item['承辦人員'] || '').trim();
-                const isDesignerActive = ACTIVE_EMPLOYEES.some(emp => emp.trim() === cleanName);
+                const cleanName = String(item['承承辦人員'] || item['承辦人員'] || '').replace(/\s+/g, '');
+                const isDesignerActive = ACTIVE_EMPLOYEES.some(emp => emp.replace(/\s+/g, '') === cleanName);
                 const designerStyleClass = isDesignerActive 
                     ? 'text-slate-700 font-medium' 
                     : 'text-slate-300 font-normal'; 
@@ -653,7 +654,7 @@
             document.getElementById('btnNextPage').disabled = (currentPage === totalPages);
         }
 
-        // 🌟 業務進度追蹤看板渲染（新增排版與日期顯示）
+        // 🌟 業務進度追蹤卡片（支援新版日期欄位與完美渲染排序）
         function renderTrackerCards() {
             const container = document.getElementById('trackerContainer');
             if(!container) return;
@@ -677,20 +678,19 @@
                 const progress = parseInt(item['進度百分比'], 10) || 0;
                 let colorClass = progress >= 100 ? 'bg-emerald-400' : (progress <= 30 ? 'bg-amber-400' : 'bg-rose-400');
 
-                const cleanTrackerName = String(item['承辦人'] || '').trim();
-                const isTrackerActive = ACTIVE_EMPLOYEES.some(emp => emp.trim() === cleanTrackerName);
+                const cleanTrackerName = String(item['承辦人'] || '').replace(/\s+/g, '');
+                const isTrackerActive = ACTIVE_EMPLOYEES.some(emp => emp.replace(/\s+/g, '') === cleanTrackerName);
                 const trackerNameClass = isTrackerActive ? 'text-slate-500 bg-slate-100' : 'text-slate-300 bg-slate-50';
 
-                // 💡 卡片內部排版微調：將預定交付日移到上方醒目位置，讓視覺更乾淨
                 card.innerHTML = `
                     <div>
                         <div class="flex items-start justify-between mb-2">
                             <h3 class="font-bold text-slate-800 text-xs leading-snug max-w-[70%]">${item['科室項目'] || '未命名項目'}</h3>
                             <span class="text-[10px] font-semibold px-2 py-0.5 rounded-lg shrink-0 ${trackerNameClass}">${item['承辦人'] || '未分派'}</span>
                         </div>
-                        <div class="flex items-center text-[10px] text-slate-400 bg-slate-50/60 border border-slate-100 rounded-lg px-2 py-1 mb-3 w-fit font-medium">
-                            <svg class="w-3 h-3 text-slate-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            <span>預定交付：${item['預定完成日'] || '未定'}</span>
+                        <div class="flex items-center text-[10px] text-slate-500 bg-rose-50/50 border border-rose-100/40 text-rose-600 rounded-lg px-2 py-1 mb-3 w-fit font-semibold">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span>預定完成日：${item['預定完成日'] || '-'}</span>
                         </div>
                         <p class="text-slate-400 text-[11px] mb-4 line-clamp-2">${item['目前進度說明'] || '暫無進度說明'}</p>
                     </div>
@@ -709,7 +709,7 @@
         }
 
         // ==========================================
-        // 💡 5. 本機上傳備援解析
+        // 💡 6. 本機上傳備援解析
         // ==========================================
         function handleFileSelection(file) {
             if(!file) return;
@@ -732,18 +732,18 @@
             const demoJson = {
                 sheet1Data: [
                     { '申請單號': 'A2026001', '院區': '永康總院', '申請日期': '2026-03-05', '需用日期': '2026-03-20', '完成日期': '2026-03-18', '單位代碼': '護理部', '申請人': '王護理長', '教材類別': '4', '製作者': '林雨蕎', '狀態': '已結案' },
-                    { '申請單號': 'A2026002', '院區': '柳營院區', '申請日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '單位代碼': '小兒科', '申請人': '李醫師', '教材類別': '2, 3', '製作者': '前離職同仁測試', '狀態': '進行中' }
+                    { '申請單號': 'A2026002', '院區': '柳營院區', '申請日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '單位代碼': '小兒科', '申請人': '李醫師', '教材類別': '2, 3', '製作者': '楊珮欣', '狀態': '進行中' }
                 ],
                 sheet2Data: [
-                    { '科室項目': '護理部電子報 2026春季版', '目前進度說明': '排版中，已套用新春視覺。', '承辦人': '林雨蕎', '進度百分比': '100', '預定完成日': '2026-04-15' },
-                    { '科室項目': '跨年活動大視覺教材', '目前進度說明': '企劃階段。', '承辦人': '蕭麗香', '進度百分比': '15', '預定完成日': '2026-12-25' }
+                    { '項目': '護理部電子報 2026春季版', '目前進度說明': '排版中。', '參與人員': '林雨蕎', '進度百分比': '100', '預定完成日': '2026-04-15' },
+                    { '項目': '跨年大視覺教材案', '目前進度說明': '企劃中。', '參與人員': '蕭麗香', '進度百分比': '15', '預定完成日': '2026-12-25' }
                 ]
             };
             processAndRenderData(demoJson);
         }
 
         // ==========================================
-        // 💡 6. 事件監聽
+        // 💡 7. 事件監聽
         // ==========================================
         window.addEventListener('DOMContentLoaded', () => {
             loadGoogleSheetData();
