@@ -10,765 +10,200 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'soft': '0 4px 20px -2px rgba(51, 65, 85, 0.05), 0 2px 12px -1px rgba(51, 65, 85, 0.03)',
-                        'glass': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.5), 0 1px 3px 0 rgba(0, 0, 0, 0.05)',
-                    }
+                    fontFamily: { sans: ['Inter', 'Noto Sans TC', 'sans-serif'] },
+                    boxShadow: { 'soft': '0 4px 20px -2px rgba(51, 65, 85, 0.05)', 'glass': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.5)' }
                 }
             }
         }
     </script>
     <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-slate-50/50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
     <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 px-6 py-4 flex items-center justify-between shadow-glass">
         <div class="flex items-center space-x-3.5">
-            <div class="bg-gradient-to-tr from-rose-400 to-orange-300 text-white p-2.5 rounded-xl shadow-md shadow-rose-500/10">
+            <div class="bg-gradient-to-tr from-rose-400 to-orange-300 text-white p-2.5 rounded-xl">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             </div>
             <div>
-                <h1 class="text-base font-bold text-slate-800">平面媒體教材製作申請數據智慧分析系統</h1>
-                <p class="text-[11px] text-slate-400 font-medium tracking-wide">多媒體業務效能管理看板</p>
+                <h1 class="text-base font-bold">平面媒體教材製作申請數據智慧分析系統</h1>
+                <p class="text-[11px] text-slate-400">多媒體業務效能管理看板</p>
             </div>
         </div>
         <div class="flex items-center space-x-2">
-            <button data-tab="tabDashboard" class="tab-btn bg-rose-50 text-rose-600 px-4 py-2 text-xs font-semibold rounded-xl transition-all shadow-sm">
-                數據儀表板
-            </button>
-            <button data-tab="tabTracker" class="tab-btn text-slate-500 px-4 py-2 text-xs font-medium rounded-xl transition-all hover:bg-slate-50 hover:text-slate-900">
-                業務進度追蹤
-            </button>
+            <button data-tab="tabDashboard" class="tab-btn bg-rose-50 text-rose-600 px-4 py-2 text-xs font-semibold rounded-xl">數據儀表板</button>
+            <button data-tab="tabTracker" class="tab-btn text-slate-500 px-4 py-2 text-xs font-medium rounded-xl">業務進度追蹤</button>
         </div>
     </header>
 
     <main class="flex-1 p-6 max-w-[1500px] w-full mx-auto space-y-6">
-        
-        <div id="dropzone" class="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-10 shadow-soft text-center transition-all duration-300 hover:border-rose-300 group">
+        <div id="dropzone" class="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center transition-all hover:border-rose-300 group">
             <div class="max-w-md mx-auto flex flex-col items-center justify-center space-y-4">
-                <div class="p-4 bg-slate-50 rounded-2xl text-slate-400 group-hover:bg-rose-50 group-hover:text-rose-400 transition-colors shadow-inner">
-                    <svg class="w-10 h-10 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                </div>
-                <div>
-                    <p class="text-sm font-semibold text-slate-700">正在自動即時同步 Google Sheet 雲端數據...</p>
-                    <p class="text-[11px] text-slate-400 mt-1">若因權限或網路未回應，您亦可選擇手動上傳本機備援檔案</p>
-                </div>
-                <div class="flex items-center space-x-3 pt-2">
+                <p class="text-sm font-semibold text-slate-700">正在同步 Google Sheet 雲端大數據...</p>
+                <div class="flex space-x-3 pt-2">
                     <input type="file" id="fileInput" accept=".xlsx, .xls" class="hidden">
-                    <button onclick="document.getElementById('fileInput').click()" class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all">選擇本機檔案</button>
-                    <button id="btnLoadDemo" class="bg-rose-50 text-rose-600 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-rose-100/80 transition-all">瀏覽示範數據</button>
+                    <button onclick="document.getElementById('fileInput').click()" class="bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-medium">手動上傳備援檔案</button>
                 </div>
             </div>
         </div>
 
         <div id="dashboardArea" class="hidden space-y-6">
-            
             <div id="tabDashboard" class="tab-content space-y-6">
-                <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex flex-wrap gap-4 items-center justify-between">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 w-full flex-1">
-                        <div class="flex flex-col space-y-1">
-                            <label class="text-[11px] font-bold text-slate-400 tracking-wider">關鍵字搜尋</label>
-                            <input type="text" id="filterSearch" placeholder="單號 / 科室 / 申請人..." class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all">
-                        </div>
-                        <div class="flex flex-col space-y-1">
-                            <label class="text-[11px] font-bold text-slate-400 tracking-wider">所屬院區</label>
-                            <select id="filterCampus" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all"><option value="">全部</option></select>
-                        </div>
-                        <div class="flex flex-col space-y-1">
-                            <label class="text-[11px] font-bold text-slate-400 tracking-wider">結案狀態</label>
-                            <select id="filterStatus" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all"><option value="">全部</option></select>
-                        </div>
-                        <div class="flex flex-col space-y-1">
-                            <label class="text-[11px] font-bold text-slate-400 tracking-wider">教材類別</label>
-                            <select id="filterCategory" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all"><option value="">全部</option></select>
-                        </div>
-                        <div class="flex flex-col space-y-1">
-                            <label class="text-[11px] font-bold text-slate-400 tracking-wider">承辦人員</label>
-                            <select id="filterDesigner" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all"><option value="">全部</option></select>
-                        </div>
-                        <div class="flex flex-col space-y-1">
-                            <label class="text-[11px] font-bold text-slate-400 tracking-wider">主要年度</label>
-                            <select id="filterYear" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all"><option value="">全部</option></select>
-                        </div>
-                        <div class="flex flex-col space-y-1">
-                            <label class="text-[11px] font-bold text-slate-400 tracking-wider">月份分派</label>
-                            <select id="filterMonth" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all"><option value="">全部</option></select>
-                        </div>
-                    </div>
-                    <div class="pl-1 pt-4 lg:pt-0">
-                        <button id="btnResetFilters" class="border border-slate-200 text-slate-400 p-2 rounded-xl hover:bg-slate-50 hover:text-slate-700 shadow-sm transition-all" title="重設所有篩選條件">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.213 15M1 10h5V5"></path></svg>
-                        </button>
-                    </div>
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex flex-wrap gap-3">
+                    <input type="text" id="filterSearch" placeholder="搜尋關鍵字..." class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs flex-1">
+                    <select id="filterCampus" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs"><option value="">院區</option></select>
+                    <select id="filterDesigner" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs"><option value="">承辦人</option></select>
+                    <select id="filterYear" class="border border-slate-200 rounded-xl px-3 py-1.5 text-xs"><option value="">年度</option></select>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between relative overflow-hidden group">
-                        <div class="space-y-0.5">
-                            <p class="text-[11px] font-bold text-slate-400 tracking-wider">總委託申請案</p>
-                            <h3 id="kpiTotalOrders" class="text-xl font-bold text-slate-800 tracking-tight">0</h3>
-                        </div>
-                        <div class="bg-rose-50 text-rose-400 p-2.5 rounded-xl shadow-inner">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                        </div>
-                    </div>
-                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between relative overflow-hidden group">
-                        <div class="space-y-0.5">
-                            <p class="text-[11px] font-bold text-slate-400 tracking-wider">目前進行中件數</p>
-                            <h3 id="kpiPendingOrders" class="text-xl font-bold text-slate-800 tracking-tight">0</h3>
-                        </div>
-                        <div class="bg-amber-50 text-amber-400 p-2.5 rounded-xl shadow-inner">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
-                    </div>
-                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between relative overflow-hidden group">
-                        <div class="space-y-0.5">
-                            <p class="text-[11px] font-bold text-slate-400 tracking-wider">專案結案達成率</p>
-                            <h3 id="kpiCompletionRate" class="text-xl font-bold text-slate-800 tracking-tight">0.0%</h3>
-                        </div>
-                        <div class="bg-emerald-50 text-emerald-400 p-2.5 rounded-xl shadow-inner">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
-                    </div>
-                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between relative overflow-hidden group">
-                        <div class="space-y-0.5">
-                            <p class="text-[11px] font-bold text-slate-400 tracking-wider">今日追蹤里程碑</p>
-                            <h3 id="kpiTrackerCount" class="text-xl font-bold text-slate-800 tracking-tight">0</h3>
-                        </div>
-                        <div class="bg-sky-50 text-sky-400 p-2.5 rounded-xl shadow-inner">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z"></path></svg>
-                        </div>
-                    </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div class="bg-white p-4 rounded-2xl shadow-soft"><p class="text-[11px] text-slate-400 font-bold">總申請案</p><h3 id="kpiTotalOrders" class="text-xl font-bold">0</h3></div>
+                    <div class="bg-white p-4 rounded-2xl shadow-soft"><p class="text-[11px] text-slate-400 font-bold">達成率</p><h3 id="kpiCompletionRate" class="text-xl font-bold">0%</h3></div>
+                    <div class="bg-white p-4 rounded-2xl shadow-soft"><p class="text-[11px] text-slate-400 font-bold">進行中</p><h3 id="kpiPendingOrders" class="text-xl font-bold">0</h3></div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex flex-col justify-between">
-                        <div class="flex items-center justify-between mb-3 border-b border-slate-50 pb-2">
-                            <h4 class="font-bold text-slate-700 text-xs">月度業務趨勢流向分析</h4>
-                        </div>
-                        <div class="h-56 w-full relative"><canvas id="chartMonthlyTrend"></canvas></div>
-                    </div>
-                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex flex-col justify-between">
-                        <div class="flex items-center justify-between mb-3 border-b border-slate-50 pb-2">
-                            <h4 class="font-bold text-slate-700 text-xs">業務量排行榜 (在職橘/離職灰)</h4>
-                        </div>
-                        <div class="h-56 w-full relative"><canvas id="chartDesignerOutput"></canvas></div>
-                    </div>
-                    <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex flex-col justify-between">
-                        <div class="flex items-center justify-between mb-3 border-b border-slate-50 pb-2">
-                            <h4 class="font-bold text-slate-700 text-xs">委託教材類別佔比分佈 (前5名)</h4>
-                        </div>
-                        <div class="h-56 w-full relative flex items-center justify-center"><canvas id="chartCategoryShare"></canvas></div>
-                    </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-4 rounded-2xl shadow-soft"><h4 class="font-bold text-xs mb-3">月度趨勢</h4><div class="h-56"><canvas id="chartMonthlyTrend"></canvas></div></div>
+                    <div class="bg-white p-4 rounded-2xl shadow-soft"><h4 class="font-bold text-xs mb-3">業務排行榜 (在職橘/離職灰)</h4><div class="h-56"><canvas id="chartDesignerOutput"></canvas></div></div>
                 </div>
 
                 <div class="bg-white border border-slate-100 rounded-2xl shadow-soft overflow-hidden">
-                    <div class="px-5 py-3.5 border-b border-slate-50 flex flex-wrap gap-4 items-center justify-between bg-slate-50/20">
-                        <h4 class="font-bold text-slate-800 text-xs">榮譽榜與資料庫明細主表</h4>
-                        <div class="flex items-center space-x-2 text-xs text-slate-500 font-medium">
-                            <span>每頁筆數：</span>
-                            <select id="pageSize" class="border border-slate-200 rounded-lg px-2 py-0.5 bg-white text-xs focus:outline-none">
-                                <option value="10">10 筆</option>
-                                <option value="25">25 筆</option>
-                                <option value="50">50 筆</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="overflow-x-auto custom-scrollbar">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50/60 text-slate-400 font-bold text-[11px] uppercase tracking-wider border-b border-slate-100">
-                                    <th class="px-5 py-3 font-bold">申請單號</th>
-                                    <th class="px-5 py-3 font-bold">院區</th>
-                                    <th class="px-5 py-3 font-bold">單位科室</th>
-                                    <th class="px-5 py-3 font-bold">申請人</th>
-                                    <th class="px-5 py-3 font-bold">申請日期</th>
-                                    <th class="px-5 py-3 font-bold">需用日期</th>
-                                    <th class="px-5 py-3 font-bold">完成日期</th>
-                                    <th class="px-5 py-3 font-bold">教材類別</th>
-                                    <th class="px-5 py-3 text-center font-bold">製作者</th>
-                                    <th class="px-5 py-3 text-center font-bold">狀態</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-600 font-medium text-xs">
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="px-5 py-3 bg-slate-50/20 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
-                        <div id="pageInfo">1 / 1 頁 (共 0 筆)</div>
-                        <div class="flex items-center space-x-1.5">
-                            <button id="btnPrevPage" class="px-2.5 py-1 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 transition-all">上一頁</button>
-                            <button id="btnNextPage" class="px-2.5 py-1 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-40 transition-all">下一頁</button>
-                        </div>
-                    </div>
+                    <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-50 text-slate-400 font-bold"><tr><th class="px-5 py-3">單號</th><th class="px-5 py-3">單位</th><th class="px-5 py-3">申請人</th><th class="px-5 py-3">日期</th><th class="px-5 py-3">教材</th><th class="px-5 py-3">製作者</th><th class="px-5 py-3">狀態</th></tr></thead><tbody id="tableBody" class="divide-y divide-slate-100"></tbody></table></div>
                 </div>
             </div>
 
-            <div id="tabTracker" class="tab-content space-y-6 hidden">
-                <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between">
-                    <div>
-                        <h4 class="font-bold text-slate-800 text-sm">進行中業務里程碑追蹤看板</h4>
-                        <p class="text-[11px] text-slate-400 mt-0.5">排序規則：完美依據【已完成、進行中、規劃中】高低優先級階梯排列</p>
-                    </div>
-                    <div class="w-64">
-                        <input type="text" id="trackerSearch" placeholder="搜尋項目、負責人、狀態..." class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all">
-                    </div>
-                </div>
-
-                <div id="trackerContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                </div>
+            <div id="tabTracker" class="tab-content hidden space-y-6">
+                <div id="trackerContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
             </div>
-
         </div>
     </main>
 
     <script>
-        // ==========================================
-        // 💡 1. 填入你部署好的最新 GAS 網址（必須以 https:// 開頭）
-        // ==========================================
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxGIAuWSgtdH8QoATESPnYyRZOa4LOG9XCH2SLEBDK3fRnUiMr8gA8yXHYfrAEZ7ZGq0g/exec";
-
-        // 核心全域資料庫結構
-        let allData = [];
-        let trackerData = [];
-        let currentPage = 1;
-        let rowsPerPage = 10;
-        let currentFilteredTableData = [];
-        let chartInstances = {};
-
-        // 💡 2. 官方指定在職同仁控制中心 (非此名單同仁一律變灰)
         const ACTIVE_EMPLOYEES = ['蕭麗香', '林雨蕎', '許召玟', '李偲詩', '李岱璇', '陳慧娟', '葉品妤', '陳琬婷', '黃怡瑄', '未指定'];
+        const CATEGORY_MAP = {'1':'一般海報','2':'標示宣傳','3':'醫學海報','4':'衛教單張','5':'視訊媒體','6':'影像處理','7':'出版類','8':'Web類','9':'簡報','10':'現場拍','11':'其他'};
 
-        // 教材類別對應字典
-        const CATEGORY_MAP = {
-            '1': '一般海報', '2': '標示宣宣', '3': '醫學海報', '4': '衛教單張', '5': '視訊媒體',
-            '6': '影像處理', '7': '出版類', '8': 'Web類', '9': '簡報', '10': '現場拍', '11': '其他'
-        };
+        let allData = [], trackerData = [], chartInstances = {};
 
-        function convertCategoryToChinese(rawType) {
-            if (!rawType) return '其他';
-            let str = String(rawType).trim();
-            if (str === '') return '其他';
-            
-            let parts = str.split(/[\s,，、/]+/);
-            let translatedParts = parts.map(p => {
-                let pClean = p.trim();
-                return CATEGORY_MAP[pClean] || pClean; 
-            }).filter(Boolean);
-            
-            return translatedParts.length > 0 ? translatedParts.join('、') : '其他';
+        function convertCategoryToChinese(raw) {
+            if(!raw) return '其他';
+            return String(raw).split(/[\s,，、/]+/).map(p => CATEGORY_MAP[p.trim()] || p.trim()).join('、');
         }
 
-        function cleanDateStr(str) {
-            if (!str) return '-';
-            let s = String(str).trim();
-            if (s === '' || s === '-' || s.toLowerCase() === 'undefined') return '-';
-            
-            if (s.includes('GMT') || s.includes('0800') || s.match(/[a-zA-Z]/)) {
-                try {
-                    let d = new Date(s);
-                    if (!isNaN(d.getTime())) {
-                        let yyyy = d.getFullYear();
-                        let mm = String(d.getMonth() + 1).padStart(2, '0');
-                        let dd = String(d.getDate()).padStart(2, '0');
-                        return `${yyyy}-${mm}-${dd}`;
-                    }
-                } catch(e) {}
-            }
-            return s.substring(0, 10).replace(/\//g, '-');
-        }
-
-        // ==========================================
-        // 💡 3. 大數據記憶體快取核心
-        // ==========================================
         async function loadGoogleSheetData() {
-            if (!MY_GAS_URL || MY_GAS_URL.includes("這裡貼上")) return;
-            
-            const CACHE_KEY = 'chimei_dashboard_cache_v6';
-            const CACHE_TIME_KEY = 'chimei_dashboard_cache_time_v6';
-            const FIVE_MINUTES = 5 * 60 * 1000; 
-            
-            const now = new Date().getTime();
-            const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
-            const cachedData = localStorage.getItem(CACHE_KEY);
-
-            if (cachedData && cachedTime && (now - cachedTime < FIVE_MINUTES)) {
-                console.log("⚡ 觸發快取安全秒讀機制...");
-                try {
-                    const json = JSON.parse(cachedData);
-                    processAndRenderData(json);
-                    return;
-                } catch(e) { localStorage.removeItem(CACHE_KEY); }
-            }
-
             try {
-                console.log("🌐 正在跨網域同步 Google Sheet 數據...");
                 const response = await fetch(MY_GAS_URL);
                 const json = await response.json();
-                
-                if (json.status === "success") {
-                    localStorage.setItem(CACHE_KEY, JSON.stringify(json));
-                    localStorage.setItem(CACHE_TIME_KEY, now.toString());
-                    processAndRenderData(json);
-                }
-            } catch (error) {
-                console.error("雲端同步失敗，讀取過期備援快取:", error);
-                if (cachedData) {
-                    processAndRenderData(JSON.parse(cachedData));
-                }
-            }
+                if (json.status === "success") { processAndRenderData(json); }
+            } catch (error) { console.error("同步失敗:", error); }
         }
 
         function processAndRenderData(json) {
-            const seenHealthLeaflets = new Set();
-            
-            // 💡 注入安全容錯過濾：防止空行直接擊穿代碼
-            allData = (json.sheet1Data || []).filter(item => {
-                if (!item) return false;
-                if (!item['申請單號'] || String(item['申請單號']).trim() === '') return false;
-                
-                const typeChinese = convertCategoryToChinese(item['教材類別'] || '');
-                const id = String(item['申請單號']).trim();
-                
-                if (typeChinese.includes('衛教單張')) {
-                    if (seenHealthLeaflets.has(id)) return false; 
-                    seenHealthLeaflets.add(id); 
-                }
-                return true;
-            }).map(item => {
-                let year = "2026", month = "1";
-                let dateCleaned = cleanDateStr(item['申請日期'] || item['完成日期']);
-                if (dateCleaned !== '-') {
-                    let parts = dateCleaned.split('-');
-                    if (parts.length >= 2) {
-                        year = parts[0].trim();
-                        month = parseInt(parts[1], 10).toString();
-                    }
-                }
-                
-                const finalCategory = convertCategoryToChinese(item['教材類別'] || '');
-                
-                return {
-                    '申請單號': String(item['申請單號'] || '').trim(),
-                    '院區': String(item['院區'] || '永康總院').trim(),
-                    '建立日期': cleanDateStr(item['申請日期']),
-                    '需用日期': cleanDateStr(item['需用日期']),
-                    '完成日期': cleanDateStr(item['完成日期']),
-                    '科室': String(item['單位代碼'] || '不分科').trim(),     
-                    '申請人': String(item['申請人'] || '').trim(),
-                    '教材類別': finalCategory, 
-                    '承辦人員': String(item['製作者'] || '未指定').trim(),   
-                    '結案狀態': String(item['狀態'] || '未結案').trim(),     
-                    '品名': `教材製作 (${finalCategory})`,
-                    '總計金額': 0, 
-                    '年度': year,
-                    '月份': month
-                };
+            allData = (json.sheet1Data || []).filter(item => item['申請單號']).map(item => ({
+                '申請單號': String(item['申請單號']).trim(),
+                '院區': String(item['院區'] || '永康總院').trim(),
+                '科室': String(item['單位代碼'] || item['單位'] || '不分科').trim(),
+                '申請人': String(item['申請人'] || '').trim(),
+                '日期': item['申請日期'] || '-',
+                '教材類別': convertCategoryToChinese(item['教材類別']),
+                '製作者': String(item['製作者'] || '未指定').trim(),
+                '狀態': String(item['狀態'] || '未結案').trim(),
+                '年度': String(item['申請日期'] || '').substring(0,4),
+                '月份': parseInt(String(item['申請日期'] || '').substring(5,7)) || 1
+            }));
+
+            trackerData = (json.sheet2Data || []).filter(item => item['項目'] || item['狀態']).map(item => {
+                let status = String(item['狀態']).trim();
+                let pct = 50;
+                if (status === '已結案' || status === '已完成') { status = '已完成'; pct = 100; }
+                else if (status === '規劃中') { pct = 15; }
+                return { '項目': item['項目'], '承辦人': item['參與人員'] || '未分派', '狀態': status, '說明': item['備註說明'] || '暫無說明', '進度': pct };
             });
 
-            // 💡 業務追蹤看板：全面升級為狀態排序核心，徹底移除日期依賴
-            trackerData = (json.sheet2Data || []).filter(item => {
-                if (!item) return false;
-                return item['項目'] || item['科室項目'] || item['狀態'];
-            }).map(item => {
-                let statusStr = String(item['狀態'] || '').trim();
-                
-                // 自動融合相容各式命名习惯
-                if (statusStr === '已結案') statusStr = '已完成';
-                if (!statusStr) statusStr = '進行中';
+            const statusOrder = { '已完成': 1, '進行中': 2, '規劃中': 3 };
+            trackerData.sort((a,b) => (statusOrder[a.狀態] || 4) - (statusOrder[b.狀態] || 4));
 
-                let pct = 50; 
-                if (statusStr === '已完成' || statusStr === '已結案') pct = 100;
-                if (statusStr === '規劃中' || statusStr === '未開始') pct = 15;
-
-                return {
-                    '科室項目': String(item['項目'] || item['科室項目'] || '未命名項目').trim(),
-                    '目前進度說明': String(item['備註說明'] || item['目前進度說明'] || '暫無進度說明').trim(),
-                    '承辦人': String(item['參與人員'] || item['承辦人'] || '未分派').trim(),
-                    '狀態': statusStr,
-                    '進度百分比': pct
-                };
-            });
-
-            // 🌟 完全無日期純狀態權重階梯排序 (已完成->1, 進行中->2, 規劃中->3)
-            const orderWeight = { '已完成': 1, '進行中': 2, '規劃中': 3 };
-            trackerData.sort((a, b) => {
-                const wA = orderWeight[a['狀態']] || 4;
-                const wB = orderWeight[b['狀態']] || 4;
-                return wA - wB;
-            });
-
-            const dropzone = document.getElementById('dropzone');
-            const dashboardArea = document.getElementById('dashboardArea');
-            if (dropzone) dropzone.classList.add('hidden');
-            if (dashboardArea) dashboardArea.classList.remove('hidden');
-            
-            initFilters();
-            applyFilters();
-            renderTrackerCards();
+            document.getElementById('dropzone').classList.add('hidden');
+            document.getElementById('dashboardArea').classList.remove('hidden');
+            initFilters(); applyFilters(); renderTrackerCards();
         }
 
-        // ==========================================
-        // 💡 5. 排版渲染核心模組
-        // ==========================================
         function initFilters() {
-            const uniqueValues = (key) => [...new Set(allData.map(item => item[key]).filter(Boolean))];
-            
-            const populateSelect = (id, values) => {
+            const populate = (id, vals) => {
                 const el = document.getElementById(id);
-                if(!el) return;
-                const currentVal = el.value;
-                el.innerHTML = '<option value="">全部</option>';
-                values.forEach(v => { el.innerHTML += `<option value="${v}">${v}</option>`; });
-                el.value = currentVal;
+                el.innerHTML = '<option value="">全部</option>' + [...new Set(vals)].filter(Boolean).map(v => `<option value="${v}">${v}</option>`).join('');
             };
-
-            populateSelect('filterCampus', uniqueValues('院區'));
-            populateSelect('filterStatus', uniqueValues('結案狀態'));
-            populateSelect('filterCategory', uniqueValues('教材類別'));
-            populateSelect('filterDesigner', uniqueValues('承辦人員'));
-            populateSelect('filterMonth', uniqueValues('月份'));
-            populateSelect('filterYear', ['2024', '2025', '2026']);
+            populate('filterCampus', allData.map(d => d.院區));
+            populate('filterDesigner', allData.map(d => d.製作者));
+            populate('filterYear', ['2024', '2025', '2026']);
         }
 
         function applyFilters() {
-            const searchVal = document.getElementById('filterSearch').value.toLowerCase().trim();
-            const campusVal = document.getElementById('filterCampus').value;
-            const statusVal = document.getElementById('filterStatus').value;
-            const catVal = document.getElementById('filterCategory').value;
-            const designerVal = document.getElementById('filterDesigner').value;
-            const yearVal = document.getElementById('filterYear').value;
-            const monthVal = document.getElementById('filterMonth').value;
+            const search = document.getElementById('filterSearch').value.toLowerCase();
+            const campus = document.getElementById('filterCampus').value;
+            const designer = document.getElementById('filterDesigner').value;
+            const year = document.getElementById('filterYear').value;
 
-            const filtered = allData.filter(item => {
-                if (searchVal) {
-                    const matchText = `${item['申請單號'] || ''} ${item['科室'] || ''} ${item['申請人'] || ''} ${item['教材類別'] || ''}`.toLowerCase();
-                    if (!matchText.includes(searchVal)) return false;
-                }
-                if (campusVal && item['院區'] !== campusVal) return false;
-                if (statusVal && item['結案狀態'] !== statusVal) return false;
-                if (catVal && item['教材類別'] !== catVal) return false;
-                if (designerVal && item['承辦人員'] !== designerVal) return false;
-                if (yearVal && String(item['年度']) !== yearVal) return false;
-                if (monthVal && String(item['月份']) !== monthVal) return false;
+            const filtered = allData.filter(d => {
+                if (search && !Object.values(d).join(' ').toLowerCase().includes(search)) return false;
+                if (campus && d.院區 !== campus) return false;
+                if (designer && d.製作者 !== designer) return false;
+                if (year && d.年度 !== year) return false;
                 return true;
             });
 
-            renderKpis(filtered);
-            renderCharts(filtered);
-            renderTableData(filtered);
+            renderKpis(filtered); renderCharts(filtered); renderTable(filtered);
         }
 
         function renderKpis(data) {
-            document.getElementById('kpiTotalOrders').textContent = data.length.toLocaleString();
-            const closedCount = data.filter(item => item['結案狀態'] === '已結案' || item['結案狀態'] === '已完成').length;
-            const rate = data.length ? ((closedCount / data.length) * 100).toFixed(1) : '0.0';
-            document.getElementById('kpiCompletionRate').textContent = `${rate}%`;
-
-            const unclosedCount = data.filter(item => item['結案狀態'] !== '已結案' && item['結案狀態'] !== '已完成').length;
-            document.getElementById('kpiPendingOrders').textContent = unclosedCount.toLocaleString();
-            document.getElementById('kpiTrackerCount').textContent = trackerData.length.toLocaleString();
+            document.getElementById('kpiTotalOrders').textContent = data.length;
+            const closed = data.filter(d => d.狀態 === '已結案' || d.狀態 === '已完成').length;
+            document.getElementById('kpiCompletionRate').textContent = data.length ? Math.round(closed/data.length*100) + '%' : '0%';
+            document.getElementById('kpiPendingOrders').textContent = data.length - closed;
         }
 
         function renderCharts(data) {
-            const createOrUpdateChart = (canvasId, type, configGen) => {
-                const ctx = document.getElementById(canvasId);
-                if(!ctx) return;
-                if(chartInstances[canvasId]) { chartInstances[canvasId].destroy(); }
-                chartInstances[canvasId] = new Chart(ctx, configGen());
-            };
+            const ctx1 = document.getElementById('chartMonthlyTrend'), ctx2 = document.getElementById('chartDesignerOutput');
+            if(chartInstances.trend) chartInstances.trend.destroy();
+            if(chartInstances.bar) chartInstances.bar.destroy();
 
-            // 1. 月度趨勢
-            const monthMap = {};
-            data.forEach(item => {
-                if(item['月份']) { monthMap[item['月份']] = (monthMap[item['月份']] || 0) + 1; }
-            });
-            const months = Object.keys(monthMap).sort((a,b) => Number(a)-Number(b));
-            createOrUpdateChart('chartMonthlyTrend', 'line', () => ({
-                type: 'line',
-                data: {
-                    labels: months.map(m => `${m}月`),
-                    datasets: [{
-                        label: '委託申請件數',
-                        data: months.map(m => monthMap[m]),
-                        borderColor: '#f43f5e',
-                        backgroundColor: 'rgba(244, 63, 94, 0.05)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.25
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            }));
+            const mCounts = new Array(12).fill(0);
+            data.forEach(d => { if(d.月份) mCounts[d.月份-1]++; });
+            chartInstances.trend = new Chart(ctx1, { type: 'line', data: { labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'], datasets: [{ label: '案件數', data: mCounts, borderColor: '#f43f5e', fill: true, backgroundColor: 'rgba(244,63,94,0.1)' }] }, options: { maintainAspectRatio: false } });
 
-            // 2. 業務排行榜 (離職員工防呆全盲比對變灰技術)
-            const designerMap = {};
-            data.forEach(item => {
-                if(item['承辦人員']) { designerMap[item['承辦人員']] = (designerMap[item['承辦人員']] || 0) + 1; }
-            });
-            const designers = Object.keys(designerMap).sort((a,b) => designerMap[b] - designerMap[a]);
-            
-            const barColors = designers.map(name => {
-                const cleanName = String(name).replace(/\s+/g, ''); 
-                const isActive = ACTIVE_EMPLOYEES.some(emp => emp.replace(/\s+/g, '') === cleanName);
-                return isActive ? '#fb923c' : '#cbd5e1'; 
-            });
-
-            createOrUpdateChart('chartDesignerOutput', 'bar', () => ({
-                type: 'bar',
-                data: {
-                    labels: designers,
-                    datasets: [{
-                        label: '接單總量',
-                        data: designers.map(d => designerMap[d]),
-                        backgroundColor: barColors, 
-                        borderRadius: 6
-                    }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            }));
-
-            // 3. 教材佔比
-            const catMapRaw = {};
-            data.forEach(item => {
-                if(item['教材類別']) { catMapRaw[item['教材類別']] = (catMapRaw[item['教材類別']] || 0) + 1; }
-            });
-            const sortedCats = Object.entries(catMapRaw).sort((a, b) => b[1] - a[1]);
-            const catMap = {};
-            let otherSum = 0;
-            sortedCats.forEach(([catName, count], index) => {
-                if (index < 5) { catMap[catName] = count; } else { otherSum += count; }
-            });
-            if (otherSum > 0) { catMap['其他教材'] = (catMap['其他教材'] || 0) + otherSum; }
-
-            createOrUpdateChart('chartCategoryShare', 'doughnut', () => ({
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(catMap),
-                    datasets: [{
-                        data: Object.values(catMap),
-                        backgroundColor: ['#f43f5e', '#fb923c', '#38bdf8', '#34d399', '#a78bfa', '#cbd5e1']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
-            }));
+            const dMap = {};
+            data.forEach(d => { dMap[d.製作者] = (dMap[d.製作者] || 0) + 1; });
+            const sortedD = Object.entries(dMap).sort((a,b) => b[1]-a[1]);
+            chartInstances.bar = new Chart(ctx2, { type: 'bar', data: { labels: sortedD.map(x => x[0]), datasets: [{ data: sortedD.map(x => x[1]), backgroundColor: sortedD.map(x => ACTIVE_EMPLOYEES.includes(x[0].replace(/\s+/g,'')) ? '#fb923c' : '#e2e8f0') }] }, options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } } } });
         }
 
-        function renderTableData(data) {
-            currentFilteredTableData = data;
-            renderTable();
-        }
-
-        function renderTable() {
+        function renderTable(data) {
             const tbody = document.getElementById('tableBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-
-            const start = (currentPage - 1) * rowsPerPage;
-            const end = start + rowsPerPage;
-            const pageData = currentFilteredTableData.slice(start, end);
-
-            if(pageData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="px-5 py-8 text-center text-xs text-slate-400">沒有符合指定條件的明細數據</td></tr>`;
-                updatePaginationControls(0);
-                return;
-            }
-
-            pageData.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50/50 transition-colors border-b border-slate-100 text-slate-600';
-                
-                const isClosed = item['結案狀態'] === '已結案' || item['結案狀態'] === '聯已完成' || item['結案狀態'] === '已完成';
-                const badgeClass = isClosed ? 'bg-emerald-50 text-emerald-600 ring-emerald-500/10' : 'bg-amber-50 text-amber-600 ring-amber-500/10';
-
-                const cleanName = String(item['承辦人員'] || '').replace(/\s+/g, '');
-                const isDesignerActive = ACTIVE_EMPLOYEES.some(emp => emp.replace(/\s+/g, '') === cleanName);
-                const designerStyleClass = isDesignerActive ? 'text-slate-700 font-medium' : 'text-slate-300 font-normal'; 
-
-                tr.innerHTML = `
-                    <td class="px-5 py-3 text-xs font-semibold text-slate-800">${item['申請單號'] || '-'}</td>
-                    <td class="px-5 py-3">${item['院區'] || '-'}</td>
-                    <td class="px-5 py-3">${item['科室'] || '-'}</td>
-                    <td class="px-5 py-3 font-medium">${item['申請人'] || '-'}</td>
-                    <td class="px-5 py-3 text-slate-400">${item['建立日期'] || '-'}</td>
-                    <td class="px-5 py-3 text-slate-400">${item['需用日期'] || '-'}</td>
-                    <td class="px-5 py-3 text-slate-400">${item['完成日期'] || '-'}</td>
-                    <td class="px-5 py-3"><span class="text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">${item['教材類別'] || '-'}</span></td>
-                    <td class="px-5 py-3 text-center ${designerStyleClass}">${item['承辦人員'] || '-'}</td>
-                    <td class="px-5 py-3 text-center">
-                        <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${badgeClass}">${item['結案狀態'] || '未結案'}</span>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            updatePaginationControls(currentFilteredTableData.length);
+            tbody.innerHTML = data.slice(0, 15).map(d => `<tr><td class="px-5 py-3 font-bold">${d.申請單號}</td><td class="px-5 py-3">${d.科室}</td><td class="px-5 py-3">${d.申請人}</td><td class="px-5 py-3 text-slate-400">${d.日期}</td><td class="px-5 py-3"><span class="bg-slate-100 px-1.5 py-0.5 rounded">${d.教材類別}</span></td><td class="px-5 py-3 ${ACTIVE_EMPLOYEES.includes(d.製作者.replace(/\s+/g,'')) ? 'text-slate-700' : 'text-slate-300'}">${d.製作者}</td><td class="px-5 py-3"><span class="${d.狀態==='已結案'||d.狀態==='已完成'?'text-emerald-600':'text-amber-600'}">${d.狀態}</span></td></tr>`).join('');
         }
 
-        function updatePaginationControls(totalRows) {
-            const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
-            document.getElementById('pageInfo').textContent = `${currentPage} / ${totalPages} 頁 (共 ${totalRows} 筆)`;
-            document.getElementById('btnPrevPage').disabled = (currentPage === 1);
-            document.getElementById('btnNextPage').disabled = (currentPage === totalPages);
-        }
-
-        // 🌟 業務進度追蹤看板（無日期回歸純狀態，高優先級階梯排序）
         function renderTrackerCards() {
             const container = document.getElementById('trackerContainer');
-            if(!container) return;
-            container.innerHTML = '';
-
-            const searchVal = document.getElementById('trackerSearch') ? document.getElementById('trackerSearch').value.toLowerCase().trim() : '';
-            const filtered = trackerData.filter(item => {
-                if(!searchVal) return true;
-                return `${item['科室項目'] || ''} ${item['承辦人'] || ''} ${item['狀態'] || ''} ${item['目前進度說明'] || ''}`.toLowerCase().includes(searchVal);
-            });
-
-            if(filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full py-10 text-center text-slate-400 text-xs">暫無符合搜尋標準的追蹤卡片</div>`;
-                return;
-            }
-
-            filtered.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'bg-white border border-slate-100 rounded-xl p-4 shadow-sm flex flex-col justify-between';
-                
-                const progress = item['進度百分比'];
-                
-                // 專屬糖果配色糖果條控制
-                let colorClass = 'bg-rose-400';
-                let statusBadgeStyle = 'bg-rose-50 text-rose-600 border-rose-100';
-                
-                if (progress === 100) {
-                    colorClass = 'bg-emerald-400';
-                    statusBadgeStyle = 'bg-emerald-50 text-emerald-600 border-emerald-100';
-                } else if (progress === 15) {
-                    colorClass = 'bg-amber-400';
-                    statusBadgeStyle = 'bg-amber-50 text-amber-600 border-amber-100';
-                }
-
-                const cleanTrackerName = String(item['承辦人'] || '').replace(/\s+/g, '');
-                const isTrackerActive = ACTIVE_EMPLOYEES.some(emp => emp.replace(/\s+/g, '') === cleanTrackerName);
-                const trackerNameClass = isTrackerActive ? 'text-slate-500 bg-slate-100' : 'text-slate-300 bg-slate-50';
-
-                card.innerHTML = `
-                    <div>
-                        <div class="flex items-start justify-between mb-2">
-                            <h3 class="font-bold text-slate-800 text-xs leading-snug max-w-[70%]">${item['科室項目'] || '未命名項目'}</h3>
-                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-lg shrink-0 ${trackerNameClass}">${item['承辦人'] || '未分派'}</span>
-                        </div>
-                        <div class="flex items-center text-[10px] border rounded-md px-2 py-0.5 mb-3 w-fit font-bold ${statusBadgeStyle}">
-                            <span>當前階段：${item['狀態'] || '進行中'}</span>
-                        </div>
-                        <p class="text-slate-400 text-[11px] mb-4 line-clamp-2">${item['目前進度說明'] || '暫無進度說明'}</p>
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-center text-[10px] text-slate-400 mb-1 font-medium">
-                            <span>量能佔比</span>
-                            <span class="text-slate-700 font-bold">${progress}%</span>
-                        </div>
-                        <div class="w-full bg-slate-100 rounded-full h-1.5">
-                            <div class="${colorClass} h-1.5 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+            container.innerHTML = trackerData.map(d => `<div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                <div class="flex justify-between mb-2"><h3 class="font-bold text-xs">${d.項目}</h3><span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-lg">${d.承辦人}</span></div>
+                <p class="text-[11px] text-slate-400 mb-3">${d.說明}</p>
+                <div class="w-full bg-slate-100 h-1.5 rounded-full"><div class="${d.進度===100?'bg-emerald-400':d.進度===15?'bg-amber-400':'bg-rose-400'} h-full rounded-full" style="width:${d.進度}%"></div></div>
+            </div>`).join('');
         }
 
-        function handleFileSelection(file) {
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = e.target.result;
-                const workbook = XLSX.read(data, { type: 'binary' });
-                const s1 = workbook.SheetNames[0], s2 = workbook.SheetNames[1] || workbook.SheetNames[0];
-                
-                processAndRenderData({
-                    sheet1Data: XLSX.utils.sheet_to_json(workbook.Sheets[s1]),
-                    sheet2Data: XLSX.utils.sheet_to_json(workbook.Sheets[s2])
-                });
-            };
-            reader.readAsBinaryString(file);
-        }
-
-        function loadDemoData() {
-            processAndRenderData({
-                sheet1Data: [
-                    { '申請單號': 'A2026001', '院區': '永康總院', '申請日期': '2026-03-05', '需用日期': '2026-03-20', '完成日期': '2026-03-18', '單位代碼': '護理部', '申請人': '王護理長', '教材類別': '4', '製作者': '林雨蕎', '狀態': '已結案' },
-                    { '申請單號': 'A2026002', '院區': '柳營院區', '申請日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '單位代碼': '小兒科', '申請人': '李醫師', '教材類別': '2', '製作者': '楊珮欣', '狀態': '進行中' }
-                ],
-                sheet2Data: [
-                    { '項目': '護理部電子報 2026春季版', '目前進度說明': '排版作業已全數過關。', '參與人員': '林雨蕎', '狀態': '已結案' },
-                    { '項目': '跨年大視覺教材案', '目前進度說明': '企劃前置討論中。', '參與人員': '蕭麗香', '狀態': '進行中' },
-                    { '項目': '年度新制教材企劃', '目前進度說明': '大綱初步草擬中。', '參與人員': '許召玟', '狀態': '規劃中' }
-                ]
-            });
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadGoogleSheetData();
-
-            const tabButtons = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const tabId = btn.getAttribute('data-tab');
-                    tabButtons.forEach(b => b.className = "tab-btn text-slate-500 px-4 py-2 text-xs font-medium rounded-xl transition-all hover:bg-slate-50 hover:text-slate-900");
-                    btn.className = "tab-btn bg-rose-50 text-rose-600 px-4 py-2 text-xs font-semibold rounded-xl transition-all shadow-sm";
-                    tabContents.forEach(c => c.classList.add('hidden'));
-                    document.getElementById(tabId).classList.remove('hidden');
-                });
-            });
-
-            const dropzone = document.getElementById('dropzone');
-            dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-rose-400'); });
-            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-rose-400'));
-            dropzone.addEventListener('drop', (e) => { e.preventDefault(); handleFileSelection(e.dataTransfer.files[0]); });
-            document.getElementById('fileInput').addEventListener('change', (e) => handleFileSelection(e.target.files[0]));
-            
-            ['filterSearch', 'filterCampus', 'filterStatus', 'filterCategory', 'filterDesigner', 'filterYear', 'filterMonth'].forEach(id => {
-                const el = document.getElementById(id);
-                if(el) {
-                    el.addEventListener('input', () => { currentPage = 1; applyFilters(); });
-                    el.addEventListener('change', () => { currentPage = 1; applyFilters(); });
-                }
-            });
-
-            document.getElementById('btnResetFilters').onclick = () => {
-                ['filterSearch', 'filterCampus', 'filterStatus', 'filterCategory', 'filterDesigner', 'filterYear', 'filterMonth'].forEach(id => {
-                    if(document.getElementById(id)) document.getElementById(id).value = '';
-                });
-                applyFilters();
-            };
-
-            document.getElementById('btnPrevPage').onclick = () => { if(currentPage > 1) { currentPage--; renderTable(); } };
-            document.getElementById('btnNextPage').onclick = () => {
-                const totalPages = Math.ceil(currentFilteredTableData.length / rowsPerPage);
-                if(currentPage < totalPages) { currentPage++; renderTable(); }
-            };
-
-            document.getElementById('pageSize').onchange = (e) => { rowsPerPage = parseInt(e.target.value,10); currentPage = 1; renderTable(); };
-            document.getElementById('btnLoadDemo').onclick = loadDemoData;
-            
-            if(document.getElementById('trackerSearch')) {
-                document.getElementById('trackerSearch').addEventListener('input', renderTrackerCards);
-            }
+        window.addEventListener('DOMContentLoaded', loadGoogleSheetData);
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.onclick = () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.className = "tab-btn text-slate-500 px-4 py-2 text-xs font-medium rounded-xl");
+            btn.className = "tab-btn bg-rose-50 text-rose-600 px-4 py-2 text-xs font-semibold rounded-xl transition-all shadow-sm";
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(btn.dataset.tab).classList.remove('hidden');
         });
     </script>
 </body>
