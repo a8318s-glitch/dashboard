@@ -261,7 +261,7 @@
         // ==========================================
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxGIAuWSgtdH8QoATESPnYyRZOa4LOG9XCH2SLEBDK3fRnUiMr8gA8yXHYfrAEZ7ZGq0g/exec";
 
-        // 核心全域資料庫結構（放在同一房間，完美對接解決變數未定義錯誤）
+        // 核心全域資料庫結構
         let allData = [];
         let trackerData = [];
         let currentPage = 1;
@@ -269,8 +269,11 @@
         let currentFilteredTableData = [];
         let chartInstances = {};
 
+        // 在職同仁名單（未在名單內者，表格中自動顯示灰色且無刪除線）
+        const ACTIVE_EMPLOYEES = ['林雨蕎', '陳組員', '張組員', '未指定'];
+
         // ==========================================
-        // 💡 2. 大數據專用：向雲端請求經過清洗與過濾的指定欄位
+        // 💡 2. 大數據專用：向雲端請求數據並執行「衛教單張一筆計算」去重清洗
         // ==========================================
         async function loadGoogleSheetData() {
             if (!MY_GAS_URL || MY_GAS_URL.includes("這裡貼上")) return;
@@ -282,18 +285,31 @@
                 if (json.status === "success") {
                     console.log("雲端連線成功！正在導入數據...");
                     
-                    // 解析工作表 1 的大量大數據：只過濾提取 10 個核心指定欄位，其餘自動忽視
+                    // 建立去重追蹤器（針對衛教單張）
+                    const seenHealthLeaflets = new Set();
+                    
                     allData = (json.sheet1Data || []).filter(item => {
-                        return item['申請單號'] && String(item['申請單號']).trim() !== '';
+                        // 1. 強制剃除無效空行
+                        if (!item['申請單號'] || String(item['申請單號']).trim() === '') return false;
+                        
+                        // 2. 核心過濾邏輯：若勾選「衛教單張」，同申請單號只保留第一筆
+                        const type = String(item['教材類別'] || '').trim();
+                        const id = String(item['申請單號']).trim();
+                        if (type === '衛教單張') {
+                            if (seenHealthLeaflets.has(id)) {
+                                return false; // 重複出現的衛教單張，直接剃除
+                            }
+                            seenHealthLeaflets.add(id); // 標記為已記錄
+                        }
+                        return true;
                     }).map(item => {
-                        // 強制安全解析日期
                         let year = "2026", month = "1";
                         let dateStr = item['申請日期'] || item['完成日期'] || "";
                         if (dateStr) {
                             let parts = dateStr.toString().split(/[-/]/);
                             if (parts.length >= 2) { 
                                 year = parts[0].toString().trim(); 
-                                month = parseInt(parts[1], 10).toString(); // 強制移除月份前導零，維持 3 而非 03
+                                month = parseInt(parts[1], 10).toString(); // 去除月份前導零
                             }
                         }
                         
@@ -309,13 +325,13 @@
                             '承辦人員': String(item['製作者'] || '未指定').trim(),   
                             '結案狀態': String(item['狀態'] || '未結案').trim(),     
                             '品名': `教材製作 (${String(item['教材類別'] || '平面')})`,
-                            '總計金額': 0, // 強制給數字 0 保持純淨數值型態
+                            '總計金額': 0, 
                             '年度': year,
                             '月份': month
                         };
                     });
 
-                    // 解析工作表 2 (項目進度追蹤)
+                    // 解析工作表 2
                     trackerData = (json.sheet2Data || []).filter(item => {
                         return item['項目'] || item['科室項目'];
                     }).map(item => {
@@ -332,24 +348,22 @@
                         };
                     });
 
-                    // 解鎖畫面
                     const dropzone = document.getElementById('dropzone');
                     const dashboardArea = document.getElementById('dashboardArea');
                     if (dropzone) dropzone.classList.add('hidden');
                     if (dashboardArea) dashboardArea.classList.remove('hidden');
                     
-                    // 發動渲染核心
                     initFilters();
                     applyFilters();
                     renderTrackerCards();
                 }
             } catch (error) {
-                console.error("雲端預載遇到未預期錯誤，保持原有備援狀態:", error);
+                console.error("雲端數據傳輸或解析失敗:", error);
             }
         }
 
         // ==========================================
-        // 💡 3. 排版渲染核心模組 (完好留住你的所有精緻功能)
+        // 💡 3. 排版渲染核心模組
         // ==========================================
         function initFilters() {
             const uniqueValues = (key) => [...new Set(allData.map(item => item[key]).filter(Boolean))];
@@ -431,7 +445,7 @@
                     datasets: [{
                         label: '委託申請件數',
                         data: months.map(m => monthMap[m]),
-                        borderColor: '#f43f5e', // 糖果粉色調系
+                        borderColor: '#f43f5e',
                         backgroundColor: 'rgba(244, 63, 94, 0.05)',
                         borderWidth: 2,
                         fill: true,
@@ -454,7 +468,7 @@
                     datasets: [{
                         label: '接單總量',
                         data: designers.map(d => designerMap[d]),
-                        backgroundColor: '#fb923c', // 糖果橘色
+                        backgroundColor: '#fb923c',
                         borderRadius: 6
                     }]
                 },
@@ -507,6 +521,12 @@
                     ? 'bg-emerald-50 text-emerald-600 ring-emerald-500/10' 
                     : 'bg-amber-50 text-amber-600 ring-amber-500/10';
 
+                // 💡 離職員工判斷：若承辦人不在 ACTIVE_EMPLOYEES 名單中，文字變灰色、無刪除線
+                const isDesignerActive = ACTIVE_EMPLOYEES.includes(item['承辦人員']);
+                const designerStyleClass = isDesignerActive 
+                    ? 'text-slate-700 font-medium' 
+                    : 'text-slate-300 font-normal'; // 純灰色，無 line-through
+
                 tr.innerHTML = `
                     <td class="px-5 py-3 text-xs font-semibold text-slate-800">${item['申請單號'] || '-'}</td>
                     <td class="px-5 py-3">${item['院區'] || '-'}</td>
@@ -516,7 +536,7 @@
                     <td class="px-5 py-3 text-slate-400">${item['需用日期'] || '-'}</td>
                     <td class="px-5 py-3 text-slate-400">${item['完成日期'] || '-'}</td>
                     <td class="px-5 py-3"><span class="text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">${item['教材類別'] || '-'}</span></td>
-                    <td class="px-5 py-3 text-center text-slate-700 font-medium">${item['承辦人員'] || '-'}</td>
+                    <td class="px-5 py-3 text-center ${designerStyleClass}">${item['承辦人員'] || '-'}</td>
                     <td class="px-5 py-3 text-center">
                         <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${badgeClass}">${item['結案狀態'] || '未結案'}</span>
                     </td>
@@ -557,13 +577,17 @@
                 const progress = parseInt(item['進度百分比'], 10) || 50;
                 let colorClass = progress >= 100 ? 'bg-emerald-400' : (progress <= 30 ? 'bg-amber-400' : 'bg-rose-400');
 
+                // 💡 離職員工看板卡片同步變灰
+                const isTrackerActive = ACTIVE_EMPLOYEES.includes(item['承辦人']);
+                const trackerNameClass = isTrackerActive ? 'text-slate-500 bg-slate-100' : 'text-slate-300 bg-slate-50';
+
                 card.innerHTML = `
                     <div>
                         <div class="flex items-start justify-between mb-2">
                             <h3 class="font-bold text-slate-800 text-xs leading-snug">${item['科室項目'] || '未命名項目'}</h3>
-                            <span class="text-[10px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded-lg">${item['承辦人'] || '未分派'}</span>
+                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-lg ${trackerNameClass}">${item['承辦人'] || '未分派'}</span>
                         </div>
-                        <p class="text-slate-400 text-[11px] mb-4 line-clamp-2">${item['目前進度說明'] || '暫無進度說明'}</p>
+                        <p class="text-slate-400 text-[11px] mb-4 line-clamp-2">${item['開展進度說明'] || item['目前進度說明'] || '暫無進度說明'}</p>
                     </div>
                     <div>
                         <div class="flex justify-between items-center text-[10px] text-slate-400 mb-1 font-medium">
@@ -580,7 +604,7 @@
         }
 
         // ==========================================
-        // 💡 4. 本機上傳備援解析 (完美保留原有救急功能)
+        // 💡 4. 本機上傳備援解析
         // ==========================================
         function handleFileSelection(file) {
             if(!file) return;
@@ -590,7 +614,18 @@
                 const workbook = XLSX.read(data, { type: 'binary' });
                 const s1 = workbook.SheetNames[0], s2 = workbook.SheetNames[1] || workbook.SheetNames[0];
                 
-                allData = XLSX.utils.sheet_to_json(workbook.Sheets[s1]).map(item => {
+                const seenLeafletsLocal = new Set();
+
+                allData = XLSX.utils.sheet_to_json(workbook.Sheets[s1]).filter(item => {
+                    if (!item['申請單號'] || String(item['申請單號']).trim() === '') return false;
+                    const type = String(item['教材類別'] || '').trim();
+                    const id = String(item['申請單號']).trim();
+                    if (type === '衛教單張') {
+                        if (seenLeafletsLocal.has(id)) return false;
+                        seenLeafletsLocal.add(id);
+                    }
+                    return true;
+                }).map(item => {
                     let year = "2026", month = "1";
                     let dateStr = item['申請日期'] || item['完成日期'] || "";
                     if (dateStr) {
@@ -625,7 +660,7 @@
         function loadDemoData() {
             allData = [
                 { '申請單號': 'A2026001', '院區': '永康總院', '建立日期': '2026-03-05', '需用日期': '2026-03-20', '完成日期': '2026-03-18', '科室': '護理部', '申請人': '王護理長', '教材類別': '衛教單張', '承辦人員': '林雨蕎', '結案狀態': '已結案', '品名': '教材製作 (衛教單張)', '總計金額': 0, '年度': '2026', '月份': '3' },
-                { '申請單號': 'A2026002', '院區': '柳營院區', '建立日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '科室': '小兒科', '申請人': '李醫師', '教材類別': '海報設計', '承辦人員': '陳組員', '結案狀態': '進行中', '品名': '教材製作 (海報設計)', '總計金額': 0, '年度': '2026', '月份': '3' }
+                { '申請單號': 'A2026002', '院區': '柳營院區', '建立日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '科室': '小兒科', '申請人': '李醫師', '教材類別': '海報設計', '承辦人員': '已離職員工測試', '結案狀態': '進行中', '品名': '教材製作 (海報設計)', '總計金額': 0, '年度': '2026', '月份': '3' }
             ];
             trackerData = [
                 { '科室項目': '護理部電子報 2026春季版', '目前進度說明': '排版中，已套用新春視覺。', '承辦人': '林雨蕎', '進度百分比': 75, '預定完成日': '2026-04-15' }
@@ -636,13 +671,11 @@
         }
 
         // ==========================================
-        // 💡 5. 事件監聽初始化
+        // 💡 5. 事件監聽與切換
         // ==========================================
         window.addEventListener('DOMContentLoaded', () => {
-            // 自動預載
             loadGoogleSheetData();
 
-            // 雙分頁流暢切換
             const tabButtons = document.querySelectorAll('.tab-btn');
             const tabContents = document.querySelectorAll('.tab-content');
             tabButtons.forEach(btn => {
@@ -655,14 +688,12 @@
                 });
             });
 
-            // 拖曳區檔案上傳監聽
             const dropzone = document.getElementById('dropzone');
             dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-rose-400'); });
             dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-rose-400'));
             dropzone.addEventListener('drop', (e) => { e.preventDefault(); handleFileSelection(e.dataTransfer.files[0]); });
             document.getElementById('fileInput').addEventListener('change', (e) => handleFileSelection(e.target.files[0]));
             
-            // 篩選欄位事件連動
             ['filterSearch', 'filterCampus', 'filterStatus', 'filterCategory', 'filterDesigner', 'filterYear', 'filterMonth'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) {
@@ -671,7 +702,6 @@
                 }
             });
 
-            // 重設按鈕
             document.getElementById('btnResetFilters').onclick = () => {
                 ['filterSearch', 'filterCampus', 'filterStatus', 'filterCategory', 'filterDesigner', 'filterYear', 'filterMonth'].forEach(id => {
                     if(document.getElementById(id)) document.getElementById(id).value = '';
@@ -679,7 +709,6 @@
                 applyFilters();
             };
 
-            // 分頁按鈕控制
             document.getElementById('btnPrevPage').onclick = () => { if(currentPage > 1) { currentPage--; renderTable(); } };
             document.getElementById('btnNextPage').onclick = () => {
                 const totalPages = Math.ceil(currentFilteredTableData.length / rowsPerPage);
