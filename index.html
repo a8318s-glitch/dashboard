@@ -4,15 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>平面媒體教材製作申請數據智慧分析與業務管理儀表板</title>
-    <!-- 引入 Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SheetJS (Excel 檔案解析) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
     <script>
@@ -39,7 +35,6 @@
 </head>
 <body class="bg-slate-50/50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
-    <!-- 頂部導覽列 -->
     <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 px-6 py-4 flex items-center justify-between shadow-glass">
         <div class="flex items-center space-x-3.5">
             <div class="bg-gradient-to-tr from-rose-400 to-orange-300 text-white p-2.5 rounded-xl shadow-md shadow-rose-500/10">
@@ -60,10 +55,8 @@
         </div>
     </header>
 
-    <!-- 主要工作區 -->
     <main class="flex-1 p-6 max-w-[1500px] w-full mx-auto space-y-6">
         
-        <!-- 自動同步加載與手動備援區 -->
         <div id="dropzone" class="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-10 shadow-soft text-center transition-all duration-300 hover:border-rose-300 group">
             <div class="max-w-md mx-auto flex flex-col items-center justify-center space-y-4">
                 <div class="p-4 bg-slate-50 rounded-2xl text-slate-400 group-hover:bg-rose-50 group-hover:text-rose-400 transition-colors shadow-inner">
@@ -81,12 +74,9 @@
             </div>
         </div>
 
-        <!-- 主要系統內容看板區 -->
         <div id="dashboardArea" class="hidden space-y-6">
             
-            <!-- 分頁一：數據儀表板 -->
             <div id="tabDashboard" class="tab-content space-y-6">
-                <!-- 交叉篩選控制列 -->
                 <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex flex-wrap gap-4 items-center justify-between">
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 w-full flex-1">
                         <div class="flex flex-col space-y-1">
@@ -125,7 +115,6 @@
                     </div>
                 </div>
 
-                <!-- 業務狀態量能指標 -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between relative overflow-hidden group">
                         <div class="space-y-0.5">
@@ -165,7 +154,6 @@
                     </div>
                 </div>
 
-                <!-- 業務統計量能圖表 -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex flex-col justify-between">
                         <div class="flex items-center justify-between mb-3 border-b border-slate-50 pb-2">
@@ -181,13 +169,12 @@
                     </div>
                     <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex flex-col justify-between">
                         <div class="flex items-center justify-between mb-3 border-b border-slate-50 pb-2">
-                            <h4 class="font-bold text-slate-700 text-xs">委託教材類別佔比分佈</h4>
+                            <h4 class="font-bold text-slate-700 text-xs">委託教材類別佔比分佈 (前5名)</h4>
                         </div>
                         <div class="h-56 w-full relative flex items-center justify-center"><canvas id="chartCategoryShare"></canvas></div>
                     </div>
                 </div>
 
-                <!-- 榮譽榜與原始數據明細 -->
                 <div class="bg-white border border-slate-100 rounded-2xl shadow-soft overflow-hidden">
                     <div class="px-5 py-3.5 border-b border-slate-50 flex flex-wrap gap-4 items-center justify-between bg-slate-50/20">
                         <h4 class="font-bold text-slate-800 text-xs">榮譽榜與資料庫明細主表</h4>
@@ -218,12 +205,10 @@
                                 </tr>
                             </thead>
                             <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-600 font-medium text-xs">
-                                <!-- 由 JS 動態注入 -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
 
-                    <!-- 資料分頁組件 -->
                     <div class="px-5 py-3 bg-slate-50/20 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
                         <div id="pageInfo">1 / 1 頁 (共 0 筆)</div>
                         <div class="flex items-center space-x-1.5">
@@ -234,7 +219,6 @@
                 </div>
             </div>
 
-            <!-- 分頁二：業務進度追蹤 -->
             <div id="tabTracker" class="tab-content space-y-6 hidden">
                 <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between">
                     <div>
@@ -247,14 +231,12 @@
                 </div>
 
                 <div id="trackerContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <!-- 由工作表 2 資料動態注入卡片 -->
-                </div>
+                    </div>
             </div>
 
         </div>
     </main>
 
-    <!-- 核心數據運算與連線腳本核心區 -->
     <script>
         // ==========================================
         // 💡 1. 填入你部署好的最新 GAS 網址（必須以 https:// 開頭）
@@ -269,7 +251,7 @@
         let currentFilteredTableData = [];
         let chartInstances = {};
 
-        // 💡 2. 最新在職同仁官方名單控制（不在名單上的同仁，業務明細與追蹤卡片秒變淡雅精緻灰，免去破壞美感的刪除線）
+        // 💡 2. 官方指定在職同仁名單控制中心
         const ACTIVE_EMPLOYEES = ['蕭麗香', '林雨蕎', '許召玟', '李偲詩', '李岱璇', '陳慧娟', '葉品妤', '陳琬婷', '黃怡瑄', '未指定'];
 
         // 教材類別對應字典
@@ -293,8 +275,29 @@
             return translatedParts.length > 0 ? translatedParts.join('、') : '其他';
         }
 
+        // 🌟 3. 核心時間切碎清洗器：徹底消滅台北標準時間，強制轉化為乾淨精緻的 YYYY-MM-DD 格式
+        function cleanDateStr(str) {
+            if (!str) return '-';
+            let s = String(str).trim();
+            if (s === '' || s === '-') return '-';
+            
+            if (s.includes('GMT') || s.includes('0800') || s.match(/[a-zA-Z]/)) {
+                try {
+                    let d = new Date(s);
+                    if (!isNaN(d.getTime())) {
+                        let yyyy = d.getFullYear();
+                        let mm = String(d.getMonth() + 1).padStart(2, '0');
+                        let dd = String(d.getDate()).padStart(2, '0');
+                        return `${yyyy}-${mm}-${dd}`;
+                    }
+                } catch(e) {}
+            }
+            // 若為 2026/06/15 或 2026-06-15 00:00:00，精準擷取前 10 碼並統一符號為橫線
+            return s.substring(0, 10).replace(/\//g, '-');
+        }
+
         // ==========================================
-        // 💡 3. 大數據同步與「衛教單張一筆計」清洗核心
+        // 💡 4. 大數據同步與「衛教單張一筆計」清洗核心
         // ==========================================
         async function loadGoogleSheetData() {
             if (!MY_GAS_URL || MY_GAS_URL.includes("這裡貼上")) return;
@@ -304,7 +307,7 @@
                 const json = await response.json();
                 
                 if (json.status === "success") {
-                    console.log("雲端連線成功！正在清洗海量多重代碼大數據...");
+                    console.log("雲端連線成功！正在清洗海量數據與台北時間...");
                     
                     const seenHealthLeaflets = new Set();
                     
@@ -314,20 +317,20 @@
                         const typeChinese = convertCategoryToChinese(item['教材類別']);
                         const id = String(item['申請單號']).trim();
                         
-                        // 核心防重覆灌水邏輯：若勾選或包含「衛教單張」，同申請單號只保留第一筆
                         if (typeChinese.includes('衛教單張')) {
                             if (seenHealthLeaflets.has(id)) return false; 
                             seenHealthLeaflets.add(id); 
                         }
                         return true;
                     }).map(item => {
+                        // 利用新版時間清洗器，光速拆解年月份，不被複雜時區字串卡死
                         let year = "2026", month = "1";
-                        let dateStr = item['申請日期'] || item['完成日期'] || "";
-                        if (dateStr) {
-                            let parts = dateStr.toString().split(/[-/]/);
-                            if (parts.length >= 2) { 
-                                year = parts[0].toString().trim(); 
-                                month = parseInt(parts[1], 10).toString(); 
+                        let dateCleaned = cleanDateStr(item['申請日期'] || item['完成日期']);
+                        if (dateCleaned !== '-') {
+                            let parts = dateCleaned.split('-');
+                            if (parts.length >= 2) {
+                                year = parts[0].trim();
+                                month = parseInt(parts[1], 10).toString();
                             }
                         }
                         
@@ -336,29 +339,9 @@
                         return {
                             '申請單號': String(item['申請單號'] || '').trim(),
                             '院區': String(item['院區'] || '永康總院').trim(),
-                           // 💡 強力時間切碎器：徹底消滅台北標準時間，只留純粹的 YYYY-MM-DD
-const cleanDate = (str) => {
-    if (!str) return '-';
-    let s = String(str).trim();
-    if (s.includes('GMT') || s.includes('0800')) {
-        try {
-            // 如果是標準時間字串，轉成 ISO 格式並切前 10 碼
-            let d = new Date(s);
-            if (!isNaN(d.getTime())) {
-                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-            }
-        } catch(e) {}
-    }
-    // 如果本來就是 2026-06-15 或是 2026/06/15，只拿前 10 碼並把斜線換成橫線
-    return s.substring(0, 10).replace(/\//g, '-');
-};
-
-return {
-    '申請單號': String(item['申請單號'] || '').trim(),
-    '院區': String(item['院區'] || '永康總院').trim(),
-    '建立日期': cleanDate(item['申請日期']),
-    '需用日期': cleanDate(item['需用日期']),
-    '完成日期': cleanDate(item['完成日期']),
+                            '建立日期': cleanDateStr(item['申請日期']),
+                            '需用日期': cleanDateStr(item['需用日期']),
+                            '完成日期': cleanDateStr(item['完成日期']),
                             '科室': String(item['單位代碼'] || '不分科').trim(),     
                             '申請人': String(item['申請人'] || '').trim(),
                             '教材類別': finalCategory, 
@@ -371,7 +354,7 @@ return {
                         };
                     });
 
-                    // 轉譯第二個工作表：校正進度欄位與「已完成/已結案」自動100%判定
+                    // 轉譯第二個工作表里程碑
                     trackerData = (json.sheet2Data || []).filter(item => {
                         return item['項目'] || item['科室項目'];
                     }).map(item => {
@@ -392,7 +375,7 @@ return {
                             '目前進度說明': String(item['備註說明'] || item['目前進度說明'] || '暫無進度說明').trim(),
                             '承辦人': String(item['參與人員'] || item['承辦人'] || '未分派').trim(),
                             '進度百分比': pct,
-                            '預定完成日': String(item['預定完成日'] || '即將完成').trim()
+                            '預定完成日': cleanDateStr(item['預定完成日'])
                         };
                     });
 
@@ -411,7 +394,7 @@ return {
         }
 
         // ==========================================
-        // 💡 4. 排版渲染核心模組
+        // 💡 5. 排版渲染核心模組
         // ==========================================
         function initFilters() {
             const uniqueValues = (key) => [...new Set(allData.map(item => item[key]).filter(Boolean))];
@@ -429,9 +412,10 @@ return {
             populateSelect('filterStatus', uniqueValues('結案狀態'));
             populateSelect('filterCategory', uniqueValues('教材類別'));
             populateSelect('filterDesigner', uniqueValues('承辦人員'));
-            // 💡 不要讓大數據綁架年份，強制讓選單亮出這三年
-populateSelect('filterYear', ['2024', '2025', '2026']);
             populateSelect('filterMonth', uniqueValues('月份'));
+            
+            // 💡 修正年度綁架：不再被動撈大數據年份，強制開通這三年供長官完整篩選
+            populateSelect('filterYear', ['2024', '2025', '2026']);
         }
 
         function applyFilters() {
@@ -481,6 +465,7 @@ populateSelect('filterYear', ['2024', '2025', '2026']);
                 chartInstances[canvasId] = new Chart(ctx, configGen());
             };
 
+            // 1. 月度趨勢
             const monthMap = {};
             data.forEach(item => {
                 if(item['月份']) { monthMap[item['月份']] = (monthMap[item['月份']] || 0) + 1; }
@@ -503,6 +488,7 @@ populateSelect('filterYear', ['2024', '2025', '2026']);
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             }));
 
+            // 2. 業務排行榜
             const designerMap = {};
             data.forEach(item => {
                 if(item['承辦人員']) { designerMap[item['承辦人員']] = (designerMap[item['承辦人員']] || 0) + 1; }
@@ -522,34 +508,34 @@ populateSelect('filterYear', ['2024', '2025', '2026']);
                 options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             }));
 
-            // 💡 自動加總排行榜：只留前 5 名，剩下的通通打包歸類到「其他」
-const catMapRaw = {};
-data.forEach(item => {
-    if(item['教材類別']) { catMapRaw[item['教材類別']] = (catMapRaw[item['教材類別']] || 0) + 1; }
-});
+            // 🌟 3. 教材佔比：自動排行榜加總，只保留前 5 名，其餘整合為「其他教材」
+            const catMapRaw = {};
+            data.forEach(item => {
+                if(item['教材類別']) { catMapRaw[item['教材類別']] = (catMapRaw[item['教材類別']] || 0) + 1; }
+            });
 
-// 排序選出前 5 名
-const sortedCats = Object.entries(catMapRaw).sort((a, b) => b[1] - a[1]);
-const catMap = {};
-let otherSum = 0;
+            const sortedCats = Object.entries(catMapRaw).sort((a, b) => b[1] - a[1]);
+            const catMap = {};
+            let otherSum = 0;
 
-sortedCats.forEach(([catName, count], index) => {
-    if (index < 5) {
-        catMap[catName] = count; // 前五名保留
-    } else {
-        otherSum += count; // 超過五名者加總
-    }
-});
-if (otherSum > 0) {
-    catMap['其他教材'] = (catMap['其他教材'] || 0) + otherSum;
-}
+            sortedCats.forEach(([catName, count], index) => {
+                if (index < 5) {
+                    catMap[catName] = count; 
+                } else {
+                    otherSum += count; 
+                }
+            });
+            if (otherSum > 0) {
+                catMap['其他教材'] = (catMap['其他教材'] || 0) + otherSum;
+            }
+
             createOrUpdateChart('chartCategoryShare', 'doughnut', () => ({
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(catMap),
                     datasets: [{
                         data: Object.values(catMap),
-                        backgroundColor: ['#f43f5e', '#fb923c', '#38bdf8', '#34d399', '#a78bfa', '#fb7185', '#cbd5e1', '#2dd4bf', '#fbbf24', '#a3e635', '#f472b6']
+                        backgroundColor: ['#f43f5e', '#fb923c', '#38bdf8', '#34d399', '#a78bfa', '#cbd5e1']
                     }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
@@ -585,12 +571,11 @@ if (otherSum > 0) {
                     ? 'bg-emerald-50 text-emerald-600 ring-emerald-500/10' 
                     : 'bg-amber-50 text-amber-600 ring-amber-500/10';
 
-                // 💡 自動比對新 9 人在職同仁名單（並過濾多餘空格鍵）
                 const cleanName = String(item['承辦人員'] || '').trim();
                 const isDesignerActive = ACTIVE_EMPLOYEES.some(emp => emp.trim() === cleanName);
                 const designerStyleClass = isDesignerActive 
                     ? 'text-slate-700 font-medium' 
-                    : 'text-slate-300 font-normal'; // 不合名單的前同仁業務，自動優雅變灰、無刪除線
+                    : 'text-slate-300 font-normal'; 
 
                 tr.innerHTML = `
                     <td class="px-5 py-3 text-xs font-semibold text-slate-800">${item['申請單號'] || '-'}</td>
@@ -642,7 +627,6 @@ if (otherSum > 0) {
                 const progress = parseInt(item['進度百分比'], 10) || 0;
                 let colorClass = progress >= 100 ? 'bg-emerald-400' : (progress <= 30 ? 'bg-amber-400' : 'bg-rose-400');
 
-                // 看板中的承辦人比對，若已離職也同步優雅變灰
                 const cleanTrackerName = String(item['承辦人'] || '').trim();
                 const isTrackerActive = ACTIVE_EMPLOYEES.some(emp => emp.trim() === cleanTrackerName);
                 const trackerNameClass = isTrackerActive ? 'text-slate-500 bg-slate-100' : 'text-slate-300 bg-slate-50';
@@ -670,7 +654,7 @@ if (otherSum > 0) {
         }
 
         // ==========================================
-        // 💡 5. 本機上傳備援解析
+        // 💡 6. 本機上傳備援解析
         // ==========================================
         function handleFileSelection(file) {
             if(!file) return;
@@ -694,16 +678,16 @@ if (otherSum > 0) {
                     return true;
                 }).map(item => {
                     let year = "2026", month = "1";
-                    let dateStr = item['申請日期'] || item['完成日期'] || "";
-                    if (dateStr) {
-                        let parts = dateStr.toString().split(/[-/]/);
+                    let dateCleaned = cleanDateStr(item['申請日期'] || item['完成日期']);
+                    if (dateCleaned !== '-') {
+                        let parts = dateCleaned.split('-');
                         if (parts.length >= 2) { year = parts[0]; month = parseInt(parts[1], 10).toString(); }
                     }
                     const finalCategory = convertCategoryToChinese(item['教材類別']);
                     return {
-                        '申請單號': String(item['申請單號'] || ''), '院區': String(item['院區'] || '永康總院'), '建立日期': String(item['申請日期'] || ''),
-                        '需用日期': String(item['需用日期'] || ''), '完成日期': String(item['完成日期'] || ''), '科室': String(item['單位代碼'] || '不分科'),
-                        '申請人': String(item['申請人'] || ''), '教材類別': finalCategory, '承辦人員': String(item['製作者'] || '未指定'),
+                        '申請單號': String(item['申請單號'] || ''), '院區': String(item['院區'] || '永康總院'), 
+                        '建立日期': cleanDateStr(item['申請日期']), '需用日期': cleanDateStr(item['需用日期']), '完成日期': cleanDateStr(item['完成日期']), 
+                        '科室': String(item['單位代碼'] || '不分科'), '申請人': String(item['申請人'] || ''), '教材類別': finalCategory, '承辦人員': String(item['製作者'] || '未指定'),
                         '結案狀態': String(item['狀態'] || '未結案'), '品名': `教材製作 (${finalCategory})`, '總計金額': 0, '年度': year, '月份': month
                     };
                 });
@@ -715,7 +699,7 @@ if (otherSum > 0) {
                     const statusStr = String(item['狀態'] || '').trim();
                     const progressRaw = String(item['進度百分比'] || '').trim();
                     
-                    if (statusStr === '橫結案' || statusStr === '已結案' || statusStr === '已完成' || progressRaw.includes('100')) pct = 100;
+                    if (statusStr === '已結案' || statusStr === '已完成' || progressRaw.includes('100')) pct = 100;
                     else if (progressRaw) pct = parseInt(progressRaw.replace(/[^0-9]/g, ''), 10) || 50;
                     else pct = 50;
 
@@ -724,7 +708,7 @@ if (otherSum > 0) {
                         '目前進度說明': item['備註說明'] || item['目前進度說明'] || '暫無進度說明',
                         '承辦人': item['參與人員'] || item['承辦人'] || '未分派',
                         '進度百分比': pct,
-                        '預定完成日': item['預定完成日'] || '即將完成'
+                        '預定完成日': cleanDateStr(item['預定完成日'])
                     };
                 });
                 
@@ -738,7 +722,7 @@ if (otherSum > 0) {
         function loadDemoData() {
             allData = [
                 { '申請單號': 'A2026001', '院區': '永康總院', '建立日期': '2026-03-05', '需用日期': '2026-03-20', '完成日期': '2026-03-18', '科室': '護理部', '申請人': '王護理長', '教材類別': '衛教單張', '承辦人員': '林雨蕎', '結案狀態': '已結案', '品名': '教材製作 (衛教單張)', '總計金額': 0, '年度': '2026', '月份': '3' },
-                { '申請單號': 'A2026002', '院區': '柳營院區', '建立日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '科室': '小兒科', '申請人': '李醫師', '教材類別': '2, 3', '承辦人員': '前離職員工名字測試', '結案狀態': '進行中', '品名': '教材製作 (標示宣傳、醫學海報)', '總計金額': 0, '年度': '2026', '月份': '3' }
+                { '申請單號': 'A2026002', '院區': '柳營院區', '建立日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '科室': '小兒科', '申請人': '李醫師', '教材類別': '2, 3', '承辦人員': '前離職同仁測試', '結案狀態': '進行中', '品名': '教材製作 (標示宣傳、醫學海報)', '總計金額': 0, '年度': '2026', '月份': '3' }
             ];
             trackerData = [
                 { '科室項目': '護理部電子報 2026春季版', '目前進度說明': '排版中，已套用新春視覺。', '承辦人': '林雨蕎', '進度百分比': 100, '預定完成日': '2026-04-15' }
@@ -749,7 +733,7 @@ if (otherSum > 0) {
         }
 
         // ==========================================
-        // 💡 6. 事件監聽
+        // 💡 7. 事件監聽
         // ==========================================
         window.addEventListener('DOMContentLoaded', () => {
             loadGoogleSheetData();
