@@ -39,7 +39,7 @@
 </head>
 <body class="bg-slate-50/50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
-    <!-- 頂部導覽列 (純中文介面、糖果配色細節) -->
+    <!-- 頂部導覽列 -->
     <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 px-6 py-4 flex items-center justify-between shadow-glass">
         <div class="flex items-center space-x-3.5">
             <div class="bg-gradient-to-tr from-rose-400 to-orange-300 text-white p-2.5 rounded-xl shadow-md shadow-rose-500/10">
@@ -261,7 +261,7 @@
         // ==========================================
         const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxGIAuWSgtdH8QoATESPnYyRZOa4LOG9XCH2SLEBDK3fRnUiMr8gA8yXHYfrAEZ7ZGq0g/exec";
 
-        // 全域核心資料庫結構
+        // 核心全域資料庫結構
         let allData = [];
         let trackerData = [];
         let currentPage = 1;
@@ -269,23 +269,32 @@
         let currentFilteredTableData = [];
         let chartInstances = {};
 
-        // 💡 2. 在職同仁名單控制（只要不在這個清單內的同仁，表格和卡片就會自動溫柔變灰、免去刪除線）
-        const ACTIVE_EMPLOYEES = ['林雨蕎', '陳組員', '張組員', '未指定'];
+        // 💡 2. 最新在職同仁官方名單控制（不在名單上的同仁，業務明細與追蹤卡片秒變淡雅精緻灰，免去破壞美感的刪除線）
+        const ACTIVE_EMPLOYEES = ['蕭麗香', '林雨蕎', '許召玟', '李偲詩', '李岱璇', '陳慧娟', '葉品妤', '陳琬婷', '黃怡瑄', '未指定'];
 
-        // 教材類別數字安全轉譯字典
+        // 教材類別對應字典
         const CATEGORY_MAP = {
             '1': '一般海報', '2': '標示宣傳', '3': '醫學海報', '4': '衛教單張', '5': '視訊媒體',
             '6': '影像處理', '7': '出版類', '8': 'Web類', '9': '簡報', '10': '現場拍', '11': '其他'
         };
 
+        // 強力多重代碼清洗轉譯器：能將 "4, 7, 8" 完美切開洗成 "衛教單張、出版類、Web類"
         function convertCategoryToChinese(rawType) {
             if (!rawType) return '其他';
-            const cleanKey = String(rawType).trim();
-            return CATEGORY_MAP[cleanKey] || cleanKey;
+            let str = String(rawType).trim();
+            if (str === '') return '其他';
+            
+            let parts = str.split(/[\s,，、/]+/);
+            let translatedParts = parts.map(p => {
+                let pClean = p.trim();
+                return CATEGORY_MAP[pClean] || pClean; 
+            }).filter(Boolean);
+            
+            return translatedParts.length > 0 ? translatedParts.join('、') : '其他';
         }
 
         // ==========================================
-        // 💡 3. 大數據即時獲取與清洗核心
+        // 💡 3. 大數據同步與「衛教單張一筆計」清洗核心
         // ==========================================
         async function loadGoogleSheetData() {
             if (!MY_GAS_URL || MY_GAS_URL.includes("這裡貼上")) return;
@@ -295,18 +304,18 @@
                 const json = await response.json();
                 
                 if (json.status === "success") {
-                    console.log("雲端連線成功！正在清洗海量數據...");
+                    console.log("雲端連線成功！正在清洗海量多重代碼大數據...");
                     
                     const seenHealthLeaflets = new Set();
                     
-                    // 轉譯第一個工作表：強制轉中文類別、執行衛教單張去重
                     allData = (json.sheet1Data || []).filter(item => {
                         if (!item['申請單號'] || String(item['申請單號']).trim() === '') return false;
                         
                         const typeChinese = convertCategoryToChinese(item['教材類別']);
                         const id = String(item['申請單號']).trim();
                         
-                        if (typeChinese === '衛教單張') {
+                        // 核心防重覆灌水邏輯：若勾選或包含「衛教單張」，同申請單號只保留第一筆
+                        if (typeChinese.includes('衛教單張')) {
                             if (seenHealthLeaflets.has(id)) return false; 
                             seenHealthLeaflets.add(id); 
                         }
@@ -342,18 +351,20 @@
                         };
                     });
 
-                    // 💡 轉譯第二個工作表：精準校正進度欄位與自動100%結案判定
+                    // 轉譯第二個工作表：校正進度欄位與「已完成/已結案」自動100%判定
                     trackerData = (json.sheet2Data || []).filter(item => {
                         return item['項目'] || item['科室項目'];
                     }).map(item => {
-                        let pct = 50;
+                        let pct = 0;
                         const statusStr = String(item['狀態'] || '').trim();
+                        const progressRaw = String(item['進度百分比'] || '').trim();
                         
-                        // 修正：如果 Excel 的進度百分比有填，或者狀態直接寫「已結案/已完成」，強制亮出正確進度
-                        if (statusStr === '已結案' || statusStr === '已完成') {
+                        if (statusStr === '已結案' || statusStr === '已完成' || progressRaw.includes('100')) {
                             pct = 100;
-                        } else if (item['進度百分比']) {
-                            pct = parseInt(item['進度百分比'], 10) || 50;
+                        } else if (progressRaw) {
+                            pct = parseInt(progressRaw.replace(/[^0-9]/g, ''), 10) || 50;
+                        } else {
+                            pct = 50; 
                         }
 
                         return {
@@ -432,7 +443,7 @@
 
         function renderKpis(data) {
             document.getElementById('kpiTotalOrders').textContent = data.length.toLocaleString();
-            const closedCount = data.filter(item => item['結案狀態'] === 'Ref' || item['結案狀態'] === '已結案' || item['結案狀態'] === '已完成').length;
+            const closedCount = data.filter(item => item['結案狀態'] === '已結案' || item['結案狀態'] === '已完成').length;
             const rate = data.length ? ((closedCount / data.length) * 100).toFixed(1) : '0.0';
             document.getElementById('kpiCompletionRate').textContent = `${rate}%`;
 
@@ -492,7 +503,9 @@
 
             const catMap = {};
             data.forEach(item => {
-                if(item['教材類別']) { catMap[item['教材類別']] = (catMap[item['教材類別']] || 0) + 1; }
+                if(item['教材類別']) { 
+                    catMap[item['教材類別']] = (catMap[item['教材類別']] || 0) + 1; 
+                }
             });
             createOrUpdateChart('chartCategoryShare', 'doughnut', () => ({
                 type: 'doughnut',
@@ -500,7 +513,7 @@
                     labels: Object.keys(catMap),
                     datasets: [{
                         data: Object.values(catMap),
-                        backgroundColor: ['#f43f5e', '#fb923c', '#38bdf8', '#34d399', '#a78bfa', '#fb7185', '#cbd5e1']
+                        backgroundColor: ['#f43f5e', '#fb923c', '#38bdf8', '#34d399', '#a78bfa', '#fb7185', '#cbd5e1', '#2dd4bf', '#fbbf24', '#a3e635', '#f472b6']
                     }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
@@ -536,12 +549,12 @@
                     ? 'bg-emerald-50 text-emerald-600 ring-emerald-500/10' 
                     : 'bg-amber-50 text-amber-600 ring-amber-500/10';
 
-                // 💡 自動比對在職同仁名單（忽略字串前後多按到的空格）
+                // 💡 自動比對新 9 人在職同仁名單（並過濾多餘空格鍵）
                 const cleanName = String(item['承辦人員'] || '').trim();
                 const isDesignerActive = ACTIVE_EMPLOYEES.some(emp => emp.trim() === cleanName);
                 const designerStyleClass = isDesignerActive 
                     ? 'text-slate-700 font-medium' 
-                    : 'text-slate-300 font-normal'; // 不合名單者秒變精緻灰，絕無刪除線
+                    : 'text-slate-300 font-normal'; // 不合名單的前同仁業務，自動優雅變灰、無刪除線
 
                 tr.innerHTML = `
                     <td class="px-5 py-3 text-xs font-semibold text-slate-800">${item['申請單號'] || '-'}</td>
@@ -593,7 +606,7 @@
                 const progress = parseInt(item['進度百分比'], 10) || 0;
                 let colorClass = progress >= 100 ? 'bg-emerald-400' : (progress <= 30 ? 'bg-amber-400' : 'bg-rose-400');
 
-                // 離職員工看板卡片同步變灰
+                // 看板中的承辦人比對，若已離職也同步優雅變灰
                 const cleanTrackerName = String(item['承辦人'] || '').trim();
                 const isTrackerActive = ACTIVE_EMPLOYEES.some(emp => emp.trim() === cleanTrackerName);
                 const trackerNameClass = isTrackerActive ? 'text-slate-500 bg-slate-100' : 'text-slate-300 bg-slate-50';
@@ -638,7 +651,7 @@
                     
                     const typeChinese = convertCategoryToChinese(item['教材類別']);
                     const id = String(item['申請單號']).trim();
-                    if (typeChinese === '衛教單張') {
+                    if (typeChinese.includes('衛教單張')) {
                         if (seenLeafletsLocal.has(id)) return false;
                         seenLeafletsLocal.add(id);
                     }
@@ -662,10 +675,13 @@
                 trackerData = XLSX.utils.sheet_to_json(workbook.Sheets[s2]).filter(item => {
                     return item['項目'] || item['科室項目'];
                 }).map(item => {
-                    let pct = 50;
+                    let pct = 0;
                     const statusStr = String(item['狀態'] || '').trim();
-                    if (statusStr === '已結案' || statusStr === '已完成') pct = 100;
-                    else if (item['進度百分比']) pct = parseInt(item['進度百分比'], 10) || 50;
+                    const progressRaw = String(item['進度百分比'] || '').trim();
+                    
+                    if (statusStr === '橫結案' || statusStr === '已結案' || statusStr === '已完成' || progressRaw.includes('100')) pct = 100;
+                    else if (progressRaw) pct = parseInt(progressRaw.replace(/[^0-9]/g, ''), 10) || 50;
+                    else pct = 50;
 
                     return {
                         '科室項目': item['項目'] || item['科室項目'] || '未命名項目',
@@ -686,7 +702,7 @@
         function loadDemoData() {
             allData = [
                 { '申請單號': 'A2026001', '院區': '永康總院', '建立日期': '2026-03-05', '需用日期': '2026-03-20', '完成日期': '2026-03-18', '科室': '護理部', '申請人': '王護理長', '教材類別': '衛教單張', '承辦人員': '林雨蕎', '結案狀態': '已結案', '品名': '教材製作 (衛教單張)', '總計金額': 0, '年度': '2026', '月份': '3' },
-                { '申請單號': 'A2026002', '院區': '柳營院區', '建立日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '科室': '小兒科', '申請人': '李醫師', '教材類別': '2', '承辦人員': '已離職員工測試', '結案狀態': '進行中', '品名': '教材製作 (標示宣傳)', '總計金額': 0, '年度': '2026', '月份': '3' }
+                { '申請單號': 'A2026002', '院區': '柳營院區', '建立日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '科室': '小兒科', '申請人': '李醫師', '教材類別': '2, 3', '承辦人員': '前離職員工名字測試', '結案狀態': '進行中', '品名': '教材製作 (標示宣傳、醫學海報)', '總計金額': 0, '年度': '2026', '月份': '3' }
             ];
             trackerData = [
                 { '科室項目': '護理部電子報 2026春季版', '目前進度說明': '排版中，已套用新春視覺。', '承辦人': '林雨蕎', '進度百分比': 100, '預定完成日': '2026-04-15' }
