@@ -205,7 +205,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-600 font-medium text-xs">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
 
@@ -223,7 +223,7 @@
                 <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft flex items-center justify-between">
                     <div>
                         <h4 class="font-bold text-slate-800 text-sm">進行中業務里程碑追蹤看板</h4>
-                        <p class="text-[11px] text-slate-400 mt-0.5">排序規則：完美依據【已完成、進行中、規劃中】高低階梯優先級依序展示</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">排序規則：完美依據【已完成、進行中、規劃中】高低優先級階梯排列</p>
                     </div>
                     <div class="w-64">
                         <input type="text" id="trackerSearch" placeholder="搜尋項目、負責人、狀態..." class="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400 transition-all">
@@ -231,7 +231,7 @@
                 </div>
 
                 <div id="trackerContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    </div>
+                </div>
             </div>
 
         </div>
@@ -251,12 +251,12 @@
         let currentFilteredTableData = [];
         let chartInstances = {};
 
-        // 💡 官方指定 9 人在職同仁名單
+        // 💡 2. 官方指定在職同仁控制中心 (非此名單同仁一律變灰)
         const ACTIVE_EMPLOYEES = ['蕭麗香', '林雨蕎', '許召玟', '李偲詩', '李岱璇', '陳慧娟', '葉品妤', '陳琬婷', '黃怡瑄', '未指定'];
 
         // 教材類別對應字典
         const CATEGORY_MAP = {
-            '1': '一般海報', '2': '標示宣傳', '3': '醫學海報', '4': '衛教單張', '5': '視訊媒體',
+            '1': '一般海報', '2': '標示宣宣', '3': '醫學海報', '4': '衛教單張', '5': '視訊媒體',
             '6': '影像處理', '7': '出版類', '8': 'Web類', '9': '簡報', '10': '現場拍', '11': '其他'
         };
 
@@ -294,42 +294,58 @@
         }
 
         // ==========================================
-        // 🌟 3. 改用全新安全無阻礙 JSONP 跨網域撈取大數據
+        // 💡 3. 大數據記憶體快取核心
         // ==========================================
-        function loadGoogleSheetData() {
+        async function loadGoogleSheetData() {
             if (!MY_GAS_URL || MY_GAS_URL.includes("這裡貼上")) return;
             
-            console.log("🌐 啟用高相容安全跨網域 JSONP 連線機制...");
+            const CACHE_KEY = 'chimei_dashboard_cache_v6';
+            const CACHE_TIME_KEY = 'chimei_dashboard_cache_time_v6';
+            const FIVE_MINUTES = 5 * 60 * 1000; 
             
-            const script = document.createElement('script');
-            window.handleGasResponse = function(json) {
-                if (json && json.status === "success") {
-                    processAndRenderData(json);
-                } else {
-                    console.error("GAS 後端回傳失敗:", json);
-                }
-                document.body.removeChild(script);
-                delete window.handleGasResponse;
-            };
+            const now = new Date().getTime();
+            const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+            const cachedData = localStorage.getItem(CACHE_KEY);
 
-            const separator = MY_GAS_URL.includes('?') ? '&' : '?';
-            script.src = MY_GAS_URL + separator + "callback=handleGasResponse&_ts=" + new Date().getTime();
-            document.body.appendChild(script);
+            if (cachedData && cachedTime && (now - cachedTime < FIVE_MINUTES)) {
+                console.log("⚡ 觸發快取安全秒讀機制...");
+                try {
+                    const json = JSON.parse(cachedData);
+                    processAndRenderData(json);
+                    return;
+                } catch(e) { localStorage.removeItem(CACHE_KEY); }
+            }
+
+            try {
+                console.log("🌐 正在跨網域同步 Google Sheet 數據...");
+                const response = await fetch(MY_GAS_URL);
+                const json = await response.json();
+                
+                if (json.status === "success") {
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(json));
+                    localStorage.setItem(CACHE_TIME_KEY, now.toString());
+                    processAndRenderData(json);
+                }
+            } catch (error) {
+                console.error("雲端同步失敗，讀取過期備援快取:", error);
+                if (cachedData) {
+                    processAndRenderData(JSON.parse(cachedData));
+                }
+            }
         }
 
         function processAndRenderData(json) {
             const seenHealthLeaflets = new Set();
             
+            // 💡 注入安全容錯過濾：防止空行直接擊穿代碼
             allData = (json.sheet1Data || []).filter(item => {
                 if (!item) return false;
-                const hasId = item['申請單號'] && String(item['申請單號']).trim() !== '';
-                const hasMaker = item['製作者'] && String(item['製作者']).trim() !== '';
-                if (!hasId && !hasMaker) return false;
+                if (!item['申請單號'] || String(item['申請單號']).trim() === '') return false;
                 
                 const typeChinese = convertCategoryToChinese(item['教材類別'] || '');
-                const id = String(item['申請單號'] || '').trim();
+                const id = String(item['申請單號']).trim();
                 
-                if (typeChinese.includes('衛教單張') && id !== '') {
+                if (typeChinese.includes('衛教單張')) {
                     if (seenHealthLeaflets.has(id)) return false; 
                     seenHealthLeaflets.add(id); 
                 }
@@ -345,56 +361,58 @@
                     }
                 }
                 
+                const finalCategory = convertCategoryToChinese(item['教材類別'] || '');
+                
                 return {
-                    '申請單號': String(item['申請單號'] || '').trim() || '-',
+                    '申請單號': String(item['申請單號'] || '').trim(),
                     '院區': String(item['院區'] || '永康總院').trim(),
                     '建立日期': cleanDateStr(item['申請日期']),
-                    '需用日期': cleanDateStr(item['需用日期'] || item['橫需用日期']),
+                    '需用日期': cleanDateStr(item['需用日期']),
                     '完成日期': cleanDateStr(item['完成日期']),
-                    '科室': String(item['單位代碼'] || item['科室'] || '不分科').trim(),     
-                    '申請人': String(item['申請人'] || '').trim() || '-',
-                    '教材類別': convertCategoryToChinese(item['教材類別'] || ''), 
+                    '科室': String(item['單位代碼'] || '不分科').trim(),     
+                    '申請人': String(item['申請人'] || '').trim(),
+                    '教材類別': finalCategory, 
                     '承辦人員': String(item['製作者'] || '未指定').trim(),   
                     '結案狀態': String(item['狀態'] || '未結案').trim(),     
-                    '品名': `教材製作`,
+                    '品名': `教材製作 (${finalCategory})`,
                     '總計金額': 0, 
                     '年度': year,
                     '月份': month
                 };
             });
 
+            // 💡 業務追蹤看板：全面升級為狀態排序核心，徹底移除日期依賴
             trackerData = (json.sheet2Data || []).filter(item => {
                 if (!item) return false;
-                return (item['項目'] && String(item['項目']).trim() !== '') || (item['科室項目'] && String(item['科室項目']).trim() !== '');
+                return item['項目'] || item['科室項目'] || item['狀態'];
             }).map(item => {
-                // 自動清洗狀態名稱，相容各式打字習慣
                 let statusStr = String(item['狀態'] || '').trim();
-                if (statusStr === '已結案') statusStr = '已完成';
-                if (statusStr === '規劃中') statusStr = '規劃中';
-                if (statusStr === '進行中' || statusStr === '校稿中') statusStr = '進行中';
                 
+                // 自動融合相容各式命名习惯
+                if (statusStr === '已結案') statusStr = '已完成';
+                if (!statusStr) statusStr = '進行中';
+
                 let pct = 50; 
-                if (statusStr === '已完成') pct = 100;
-                if (statusStr === '規劃中') pct = 15;
+                if (statusStr === '已完成' || statusStr === '已結案') pct = 100;
+                if (statusStr === '規劃中' || statusStr === '未開始') pct = 15;
 
                 return {
                     '科室項目': String(item['項目'] || item['科室項目'] || '未命名項目').trim(),
                     '目前進度說明': String(item['備註說明'] || item['目前進度說明'] || '暫無進度說明').trim(),
                     '承辦人': String(item['參與人員'] || item['承辦人'] || '未分派').trim(),
-                    '狀態': statusStr || '進行中',
+                    '狀態': statusStr,
                     '進度百分比': pct
                 };
             });
 
-            // 🌟 核心指定排序規則：完全擺脫日期限制！依據【已完成=1, 進行中=2, 規劃中=3】高低權重依序排列
-            const statusWeight = { '已完成': 1, '進行中': 2, '規劃中': 3 };
+            // 🌟 完全無日期純狀態權重階梯排序 (已完成->1, 進行中->2, 規劃中->3)
+            const orderWeight = { '已完成': 1, '進行中': 2, '規劃中': 3 };
             trackerData.sort((a, b) => {
-                const wA = statusWeight[a['狀態']] || 4;
-                const wB = statusWeight[b['狀態']] || 4;
-                return wA - wB; // 權重越小的 (已完成) 排在越前面
+                const wA = orderWeight[a['狀態']] || 4;
+                const wB = orderWeight[b['狀態']] || 4;
+                return wA - wB;
             });
 
-            // 🌟 關閉讀取畫面，秒開亮出大數據看板
             const dropzone = document.getElementById('dropzone');
             const dashboardArea = document.getElementById('dashboardArea');
             if (dropzone) dropzone.classList.add('hidden');
@@ -406,10 +424,11 @@
         }
 
         // ==========================================
-        // 💡 4. 排版渲染核心模組
+        // 💡 5. 排版渲染核心模組
         // ==========================================
         function initFilters() {
             const uniqueValues = (key) => [...new Set(allData.map(item => item[key]).filter(Boolean))];
+            
             const populateSelect = (id, values) => {
                 const el = document.getElementById(id);
                 if(!el) return;
@@ -497,7 +516,7 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             }));
 
-            // 2. 業務排行榜
+            // 2. 業務排行榜 (離職員工防呆全盲比對變灰技術)
             const designerMap = {};
             data.forEach(item => {
                 if(item['承辦人員']) { designerMap[item['承辦人員']] = (designerMap[item['承辦人員']] || 0) + 1; }
@@ -574,7 +593,7 @@
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50/50 transition-colors border-b border-slate-100 text-slate-600';
                 
-                const isClosed = item['結案狀態'] === '已結案' || item['結案狀態'] === '已完成';
+                const isClosed = item['結案狀態'] === '已結案' || item['結案狀態'] === '聯已完成' || item['結案狀態'] === '已完成';
                 const badgeClass = isClosed ? 'bg-emerald-50 text-emerald-600 ring-emerald-500/10' : 'bg-amber-50 text-amber-600 ring-amber-500/10';
 
                 const cleanName = String(item['承辦人員'] || '').replace(/\s+/g, '');
@@ -605,10 +624,10 @@
             const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
             document.getElementById('pageInfo').textContent = `${currentPage} / ${totalPages} 頁 (共 ${totalRows} 筆)`;
             document.getElementById('btnPrevPage').disabled = (currentPage === 1);
-            document.getElementById('btnNextPage').disabled = (totalPages <= currentPage);
+            document.getElementById('btnNextPage').disabled = (currentPage === totalPages);
         }
 
-        // 🌟 業務進度追蹤看板（完美依照 已完成 ＞ 進行中 ＞ 規劃中 依序階梯排列）
+        // 🌟 業務進度追蹤看板（無日期回歸純狀態，高優先級階梯排序）
         function renderTrackerCards() {
             const container = document.getElementById('trackerContainer');
             if(!container) return;
@@ -631,7 +650,7 @@
                 
                 const progress = item['進度百分比'];
                 
-                // 動態設定糖果配色
+                // 專屬糖果配色糖果條控制
                 let colorClass = 'bg-rose-400';
                 let statusBadgeStyle = 'bg-rose-50 text-rose-600 border-rose-100';
                 
@@ -679,6 +698,7 @@
                 const data = e.target.result;
                 const workbook = XLSX.read(data, { type: 'binary' });
                 const s1 = workbook.SheetNames[0], s2 = workbook.SheetNames[1] || workbook.SheetNames[0];
+                
                 processAndRenderData({
                     sheet1Data: XLSX.utils.sheet_to_json(workbook.Sheets[s1]),
                     sheet2Data: XLSX.utils.sheet_to_json(workbook.Sheets[s2])
@@ -695,7 +715,8 @@
                 ],
                 sheet2Data: [
                     { '項目': '護理部電子報 2026春季版', '目前進度說明': '排版作業已全數過關。', '參與人員': '林雨蕎', '狀態': '已結案' },
-                    { '項目': '跨年大視覺教材案', '目前進度說明': '企劃前置討論中。', '參與人員': '蕭麗香', '狀態': '進行中' }
+                    { '項目': '跨年大視覺教材案', '目前進度說明': '企劃前置討論中。', '參與人員': '蕭麗香', '狀態': '進行中' },
+                    { '項目': '年度新制教材企劃', '目前進度說明': '大綱初步草擬中。', '參與人員': '許召玟', '狀態': '規劃中' }
                 ]
             });
         }
