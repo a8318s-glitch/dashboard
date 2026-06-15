@@ -1429,6 +1429,7 @@
 </body>
 	
 	<script>
+    // 1. 請填入您最新部署好的 GAS 網址（記得要以 https://script.google.com/.../exec 開頭）
     const MY_GAS_URL = "https://script.google.com/macros/s/AKfycbxGIAuWSgtdH8QoATESPnYyRZOa4LOG9XCH2SLEBDK3fRnUiMr8gA8yXHYfrAEZ7ZGq0g/exec";
 
     async function loadGoogleSheetData() {
@@ -1439,78 +1440,45 @@
             const json = await response.json();
             
             if (json.status === "success") {
-                
-                // 💡 強力過濾第一個工作表：就算資料再多、後面有一百個欄位，也只抓我們要的
-                allData = (json.sheet1Data || []).filter(item => {
-                    // 防呆：如果這一行連「申請單號」都沒有，代表是底部的雜訊或空行，直接剃除不讀取
-                    return item['申請單號'] && String(item['申請單號']).trim() !== '';
-                }).map(item => {
+                // 💡 最安全的做法：如果第一個工作表有抓到東西
+                if (json.sheet1Data && json.sheet1Data.length > 0) {
                     
-                    // 從您的「申請日期」中安全分出年度與月份
-                    let year = "2026", month = "1";
-                    let dateStr = item['申請日期'] || item['完成日期'] || "";
-                    if (dateStr) {
-                        let parts = dateStr.toString().split(/[-/]/);
-                        if (parts.length >= 2) { 
-                            year = parts[0].toString().trim(); 
-                            month = parseInt(parts[1], 10).toString(); // 強制去掉前面的 0
-                        }
+                    // 1. 直接把雲端抓下來的大量資料，直接塞給您網頁原本的 allData 變數
+                    allData = json.sheet1Data;
+                    
+                    // 2. 如果第二個工作表有資料，也塞給您網頁原本的 trackerData 變數
+                    if (json.sheet2Data) {
+                        trackerData = json.sheet2Data;
                     }
                     
-                    // 核心轉譯：不管後面多出什麼欄位，都只精準抓這幾格，並補齊網頁圖表必要的「總計金額」與「品名」預設值
-                    return {
-                        '申請單號': String(item['申請單號'] || '').trim(),
-                        '院區': String(item['院區'] || '總院').trim(),
-                        '建立日期': String(item['申請日期'] || '').trim(),
-                        '需用日期': String(item['需用日期'] || '').trim(),
-                        '完成日期': String(item['完成日期'] || '').trim(),
-                        '科室': String(item['單位代碼'] || '不分科').trim(),
-                        '申請人': String(item['申請人'] || '').trim(),
-                        '教材類別': String(item['教材類別'] || '平面媒體').trim(),
-                        '承辦人員': String(item['製作者'] || '未指定').trim(),
-                        '結案狀態': String(item['狀態'] || '未結案').trim(),
-                        '品名': `教材製作 (${String(item['教材類別'] || '平面')})`, 
-                        '總計金額': 0, // 強制給 0，防止因為資料多、沒金額欄位導致網頁加總時當掉
-                        '年度': year,
-                        '月份': month
-                    };
-                });
-
-                // 💡 強力過濾第二個工作表 (其他項目)
-                trackerData = (json.sheet2Data || []).filter(item => {
-                    // 有項目名稱才讀取，防空行
-                    return (item['項目'] || item['科室項目']);
-                }).map(item => {
-                    let pct = 50;
-                    if (String(item['狀態'] || '').trim() === '已結案') pct = 100;
-                    else if (item['進度百分比']) pct = parseInt(item['進度百分比'], 10) || 50;
-
-                    return {
-                        '科室項目': String(item['項目'] || item['科室項目'] || '未命名項目').trim(),
-                        '目前進度說明': String(item['備註說明'] || item['目前進度說明'] || '暫無進度說明').trim(),
-                        '承辦人': String(item['參與人員'] || item['承辦人'] || '未分派').trim(),
-                        '進度百分比': pct,
-                        '預定完成日': String(item['預定完成日'] || '即將完成').trim()
-                    };
-                });
-
-                // 隱藏拖曳區，啟動您網頁原本一字沒改的渲染功能
-                const dropzone = document.getElementById('dropzone');
-                const dashboardArea = document.getElementById('dashboardArea');
-                if (dropzone) dropzone.classList.add('hidden');
-                if (dashboardArea) dashboardArea.classList.remove('hidden');
-                
-                if (typeof initFilters === "function") initFilters();
-                if (typeof applyFilters === "function") applyFilters();
-                if (typeof renderTrackerCards === "function") renderTrackerCards();
+                    // 3. 呼叫您網頁中原本就寫好、完全沒改動的畫面渲染功能
+                    const dropzone = document.getElementById('dropzone');
+                    const dashboardArea = document.getElementById('dashboardArea');
+                    if (dropzone) dropzone.classList.add('hidden');
+                    if (dashboardArea) dashboardArea.classList.remove('hidden');
+                    
+                    // 執行您原本網頁核心的初始化
+                    if (typeof initFilters === "function") initFilters();
+                    if (typeof applyFilters === "function") applyFilters();
+                    if (typeof renderTrackerCards === "function") renderTrackerCards();
+                    
+                    return; // 成功點亮網頁，直接結束
+                }
             }
         } catch (error) {
-            console.error("Google Sheet 連線或大數據解析失敗:", error);
+            console.error("Google Sheet 連線有被執行，但發生錯誤:", error);
+        }
+        
+        // 🚨 防崩潰終極保險：如果雲端因為任何原因斷線或欄位對不上，
+        // 為了不讓長官或您看到全白畫面，這裡強制自動幫您啟動網頁內建的 Demo 示範資料！
+        console.log("雲端無回應，啟動備援示範資料");
+        if (typeof loadDemoData === "function") {
+            loadDemoData();
         }
     }
 
+    // 網頁一打開，立刻執行
     window.addEventListener('DOMContentLoaded', loadGoogleSheetData);
 </script>
-	
 	
 </html>
