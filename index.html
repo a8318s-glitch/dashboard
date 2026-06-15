@@ -336,9 +336,29 @@
                         return {
                             '申請單號': String(item['申請單號'] || '').trim(),
                             '院區': String(item['院區'] || '永康總院').trim(),
-                            '建立日期': String(item['申請日期'] || '').trim(),
-                            '需用日期': String(item['需用日期'] || '').trim(),
-                            '完成日期': String(item['完成日期'] || '').trim(),
+                           // 💡 強力時間切碎器：徹底消滅台北標準時間，只留純粹的 YYYY-MM-DD
+const cleanDate = (str) => {
+    if (!str) return '-';
+    let s = String(str).trim();
+    if (s.includes('GMT') || s.includes('0800')) {
+        try {
+            // 如果是標準時間字串，轉成 ISO 格式並切前 10 碼
+            let d = new Date(s);
+            if (!isNaN(d.getTime())) {
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            }
+        } catch(e) {}
+    }
+    // 如果本來就是 2026-06-15 或是 2026/06/15，只拿前 10 碼並把斜線換成橫線
+    return s.substring(0, 10).replace(/\//g, '-');
+};
+
+return {
+    '申請單號': String(item['申請單號'] || '').trim(),
+    '院區': String(item['院區'] || '永康總院').trim(),
+    '建立日期': cleanDate(item['申請日期']),
+    '需用日期': cleanDate(item['需用日期']),
+    '完成日期': cleanDate(item['完成日期']),
                             '科室': String(item['單位代碼'] || '不分科').trim(),     
                             '申請人': String(item['申請人'] || '').trim(),
                             '教材類別': finalCategory, 
@@ -409,7 +429,8 @@
             populateSelect('filterStatus', uniqueValues('結案狀態'));
             populateSelect('filterCategory', uniqueValues('教材類別'));
             populateSelect('filterDesigner', uniqueValues('承辦人員'));
-            populateSelect('filterYear', uniqueValues('年度'));
+            // 💡 不要讓大數據綁架年份，強制讓選單亮出這三年
+populateSelect('filterYear', ['2024', '2025', '2026']);
             populateSelect('filterMonth', uniqueValues('月份'));
         }
 
@@ -501,12 +522,27 @@
                 options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             }));
 
-            const catMap = {};
-            data.forEach(item => {
-                if(item['教材類別']) { 
-                    catMap[item['教材類別']] = (catMap[item['教材類別']] || 0) + 1; 
-                }
-            });
+            // 💡 自動加總排行榜：只留前 5 名，剩下的通通打包歸類到「其他」
+const catMapRaw = {};
+data.forEach(item => {
+    if(item['教材類別']) { catMapRaw[item['教材類別']] = (catMapRaw[item['教材類別']] || 0) + 1; }
+});
+
+// 排序選出前 5 名
+const sortedCats = Object.entries(catMapRaw).sort((a, b) => b[1] - a[1]);
+const catMap = {};
+let otherSum = 0;
+
+sortedCats.forEach(([catName, count], index) => {
+    if (index < 5) {
+        catMap[catName] = count; // 前五名保留
+    } else {
+        otherSum += count; // 超過五名者加總
+    }
+});
+if (otherSum > 0) {
+    catMap['其他教材'] = (catMap['其他教材'] || 0) + otherSum;
+}
             createOrUpdateChart('chartCategoryShare', 'doughnut', () => ({
                 type: 'doughnut',
                 data: {
