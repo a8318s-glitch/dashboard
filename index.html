@@ -275,7 +275,7 @@
             return translatedParts.length > 0 ? translatedParts.join('、') : '其他';
         }
 
-        // 🌟 3. 核心時間切碎清洗器：徹底消滅台北標準時間，強制轉化為乾淨精緻的 YYYY-MM-DD 格式
+        // 核心時間切碎清洗器：徹底消滅台北標準時間，強制轉化為乾淨精緻的 YYYY-MM-DD 格式
         function cleanDateStr(str) {
             if (!str) return '-';
             let s = String(str).trim();
@@ -292,105 +292,130 @@
                     }
                 } catch(e) {}
             }
-            // 若為 2026/06/15 或 2026-06-15 00:00:00，精準擷取前 10 碼並統一符號為橫線
             return s.substring(0, 10).replace(/\//g, '-');
         }
 
         // ==========================================
-        // 💡 4. 大數據同步與「衛教單張一筆計」清洗核心
+        // 💡 3. 大數據同步與「5分鐘記憶體快取」清洗核心（大幅提升讀取速度）
         // ==========================================
         async function loadGoogleSheetData() {
             if (!MY_GAS_URL || MY_GAS_URL.includes("這裡貼上")) return;
             
+            const CACHE_KEY = 'chimei_dashboard_cache';
+            const CACHE_TIME_KEY = 'chimei_dashboard_cache_time';
+            const FIVE_MINUTES = 5 * 60 * 1000; // 快取有效時間：5分鐘
+            
+            const now = new Date().getTime();
+            const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+            const cachedData = localStorage.getItem(CACHE_KEY);
+
+            // 🌟 檢查是否有 5 分鐘內的快取，如果有，直接秒讀！
+            if (cachedData && cachedTime && (now - cachedTime < FIVE_MINUTES)) {
+                console.log("⚡ 觸發極速快取機制！0.1 秒從瀏覽器秒讀大數據...");
+                const json = JSON.parse(cachedData);
+                processAndRenderData(json);
+                return;
+            }
+
+            // 🌟 超過 5 分鐘或第一次讀取，連線去抓 Google 最新資料
             try {
+                console.log("🌐 正在跨網域即時同步 Google Sheet 雲端大數據...");
                 const response = await fetch(MY_GAS_URL);
                 const json = await response.json();
                 
                 if (json.status === "success") {
-                    console.log("雲端連線成功！正在清洗海量數據與台北時間...");
-                    
-                    const seenHealthLeaflets = new Set();
-                    
-                    allData = (json.sheet1Data || []).filter(item => {
-                        if (!item['申請單號'] || String(item['申請單號']).trim() === '') return false;
-                        
-                        const typeChinese = convertCategoryToChinese(item['教材類別']);
-                        const id = String(item['申請單號']).trim();
-                        
-                        if (typeChinese.includes('衛教單張')) {
-                            if (seenHealthLeaflets.has(id)) return false; 
-                            seenHealthLeaflets.add(id); 
-                        }
-                        return true;
-                    }).map(item => {
-                        // 利用新版時間清洗器，光速拆解年月份，不被複雜時區字串卡死
-                        let year = "2026", month = "1";
-                        let dateCleaned = cleanDateStr(item['申請日期'] || item['完成日期']);
-                        if (dateCleaned !== '-') {
-                            let parts = dateCleaned.split('-');
-                            if (parts.length >= 2) {
-                                year = parts[0].trim();
-                                month = parseInt(parts[1], 10).toString();
-                            }
-                        }
-                        
-                        const finalCategory = convertCategoryToChinese(item['教材類別']);
-                        
-                        return {
-                            '申請單號': String(item['申請單號'] || '').trim(),
-                            '院區': String(item['院區'] || '永康總院').trim(),
-                            '建立日期': cleanDateStr(item['申請日期']),
-                            '需用日期': cleanDateStr(item['需用日期']),
-                            '完成日期': cleanDateStr(item['完成日期']),
-                            '科室': String(item['單位代碼'] || '不分科').trim(),     
-                            '申請人': String(item['申請人'] || '').trim(),
-                            '教材類別': finalCategory, 
-                            '承辦人員': String(item['製作者'] || '未指定').trim(),   
-                            '結案狀態': String(item['狀態'] || '未結案').trim(),     
-                            '品名': `教材製作 (${finalCategory})`,
-                            '總計金額': 0, 
-                            '年度': year,
-                            '月份': month
-                        };
-                    });
-
-                    // 轉譯第二個工作表里程碑
-                    trackerData = (json.sheet2Data || []).filter(item => {
-                        return item['項目'] || item['科室項目'];
-                    }).map(item => {
-                        let pct = 0;
-                        const statusStr = String(item['狀態'] || '').trim();
-                        const progressRaw = String(item['進度百分比'] || '').trim();
-                        
-                        if (statusStr === '已結案' || statusStr === '已完成' || progressRaw.includes('100')) {
-                            pct = 100;
-                        } else if (progressRaw) {
-                            pct = parseInt(progressRaw.replace(/[^0-9]/g, ''), 10) || 50;
-                        } else {
-                            pct = 50; 
-                        }
-
-                        return {
-                            '科室項目': String(item['項目'] || item['科室項目'] || '未命名項目').trim(),
-                            '目前進度說明': String(item['備註說明'] || item['目前進度說明'] || '暫無進度說明').trim(),
-                            '承辦人': String(item['參與人員'] || item['承辦人'] || '未分派').trim(),
-                            '進度百分比': pct,
-                            '預定完成日': cleanDateStr(item['預定完成日'])
-                        };
-                    });
-
-                    const dropzone = document.getElementById('dropzone');
-                    const dashboardArea = document.getElementById('dashboardArea');
-                    if (dropzone) dropzone.classList.add('hidden');
-                    if (dashboardArea) dashboardArea.classList.remove('hidden');
-                    
-                    initFilters();
-                    applyFilters();
-                    renderTrackerCards();
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(json));
+                    localStorage.setItem(CACHE_TIME_KEY, now.toString());
+                    processAndRenderData(json);
                 }
             } catch (error) {
-                console.error("即時渲染模組錯誤:", error);
+                console.error("雲端同步失敗，嘗試讀取過期備援快取:", error);
+                if (cachedData) {
+                    const json = JSON.parse(cachedData);
+                    processAndRenderData(json);
+                }
             }
+        }
+
+        // 核心數據轉譯與渲染中心
+        function processAndRenderData(json) {
+            const seenHealthLeaflets = new Set();
+            
+            allData = (json.sheet1Data || []).filter(item => {
+                if (!item['申請單號'] || String(item['申請單號']).trim() === '') return false;
+                
+                const typeChinese = convertCategoryToChinese(item['教材類別']);
+                const id = String(item['申請單號']).trim();
+                
+                if (typeChinese.includes('衛教單張')) {
+                    if (seenHealthLeaflets.has(id)) return false; 
+                    seenHealthLeaflets.add(id); 
+                }
+                return true;
+            }).map(item => {
+                let year = "2026", month = "1";
+                let dateCleaned = cleanDateStr(item['申請日期'] || item['完成日期']);
+                if (dateCleaned !== '-') {
+                    let parts = dateCleaned.split('-');
+                    if (parts.length >= 2) {
+                        year = parts[0].trim();
+                        month = parseInt(parts[1], 10).toString();
+                    }
+                }
+                
+                const finalCategory = convertCategoryToChinese(item['教材類別']);
+                
+                return {
+                    '申請單號': String(item['申請單號'] || '').trim(),
+                    '院區': String(item['院區'] || '永康總院').trim(),
+                    '建立日期': cleanDateStr(item['申請日期']),
+                    '需用日期': cleanDateStr(item['需用日期']),
+                    '完成日期': cleanDateStr(item['完成日期']),
+                    '科室': String(item['單位代碼'] || '不分科').trim(),     
+                    '申請人': String(item['申請人'] || '').trim(),
+                    '教材類別': finalCategory, 
+                    '承辦人員': String(item['製作者'] || '未指定').trim(),   
+                    '結案狀態': String(item['狀態'] || '未結案').trim(),     
+                    '品名': `教材製作 (${finalCategory})`,
+                    '總計金額': 0, 
+                    '年度': year,
+                    '月份': month
+                };
+            });
+
+            trackerData = (json.sheet2Data || []).filter(item => {
+                return item['項目'] || item['科室項目'];
+            }).map(item => {
+                let pct = 0;
+                const statusStr = String(item['狀態'] || '').trim();
+                const progressRaw = String(item['進度百分比'] || '').trim();
+                
+                if (statusStr === '已結案' || statusStr === '已完成' || progressRaw.includes('100')) {
+                    pct = 100;
+                } else if (progressRaw) {
+                    pct = parseInt(progressRaw.replace(/[^0-9]/g, ''), 10) || 50;
+                } else {
+                    pct = 50; 
+                }
+
+                return {
+                    '科室項目': String(item['項目'] || item['科室項目'] || '未命名項目').trim(),
+                    'currently進度說明': String(item['備註說明'] || item['目前進度說明'] || '暫無進度說明').trim(),
+                    '目前進度說明': String(item['備註說明'] || item['目前進度說明'] || '暫無進度說明').trim(),
+                    '承辦人': String(item['參與人員'] || item['承辦人'] || '未分派').trim(),
+                    '進度百分比': pct,
+                    '預定完成日': cleanDateStr(item['預定完成日'])
+                };
+            });
+
+            const dropzone = document.getElementById('dropzone');
+            const dashboardArea = document.getElementById('dashboardArea');
+            if (dropzone) dropzone.classList.add('hidden');
+            if (dashboardArea) dashboardArea.classList.remove('hidden');
+            
+            initFilters();
+            applyFilters();
+            renderTrackerCards();
         }
 
         // ==========================================
@@ -414,7 +439,7 @@
             populateSelect('filterDesigner', uniqueValues('承辦人員'));
             populateSelect('filterMonth', uniqueValues('月份'));
             
-            // 💡 修正年度綁架：不再被動撈大數據年份，強制開通這三年供長官完整篩選
+            // 強制開通這三年供完整篩選
             populateSelect('filterYear', ['2024', '2025', '2026']);
         }
 
@@ -465,7 +490,6 @@
                 chartInstances[canvasId] = new Chart(ctx, configGen());
             };
 
-            // 1. 月度趨勢
             const monthMap = {};
             data.forEach(item => {
                 if(item['月份']) { monthMap[item['月份']] = (monthMap[item['月份']] || 0) + 1; }
@@ -488,7 +512,6 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             }));
 
-            // 2. 業務排行榜
             const designerMap = {};
             data.forEach(item => {
                 if(item['承辦人員']) { designerMap[item['承辦人員']] = (designerMap[item['承辦人員']] || 0) + 1; }
@@ -508,7 +531,7 @@
                 options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             }));
 
-            // 🌟 3. 教材佔比：自動排行榜加總，只保留前 5 名，其餘整合為「其他教材」
+            // 💡 教材佔比：自動排行榜加總，只保留前 5 名，其餘整合為「其他教材」
             const catMapRaw = {};
             data.forEach(item => {
                 if(item['教材類別']) { catMapRaw[item['教材類別']] = (catMapRaw[item['教材類別']] || 0) + 1; }
@@ -666,70 +689,27 @@
                 
                 const seenLeafletsLocal = new Set();
 
-                allData = XLSX.utils.sheet_to_json(workbook.Sheets[s1]).filter(item => {
-                    if (!item['申請單號'] || String(item['申請單號']).trim() === '') return false;
-                    
-                    const typeChinese = convertCategoryToChinese(item['教材類別']);
-                    const id = String(item['申請單號']).trim();
-                    if (typeChinese.includes('衛教單張')) {
-                        if (seenLeafletsLocal.has(id)) return false;
-                        seenLeafletsLocal.add(id);
-                    }
-                    return true;
-                }).map(item => {
-                    let year = "2026", month = "1";
-                    let dateCleaned = cleanDateStr(item['申請日期'] || item['完成日期']);
-                    if (dateCleaned !== '-') {
-                        let parts = dateCleaned.split('-');
-                        if (parts.length >= 2) { year = parts[0]; month = parseInt(parts[1], 10).toString(); }
-                    }
-                    const finalCategory = convertCategoryToChinese(item['教材類別']);
-                    return {
-                        '申請單號': String(item['申請單號'] || ''), '院區': String(item['院區'] || '永康總院'), 
-                        '建立日期': cleanDateStr(item['申請日期']), '需用日期': cleanDateStr(item['需用日期']), '完成日期': cleanDateStr(item['完成日期']), 
-                        '科室': String(item['單位代碼'] || '不分科'), '申請人': String(item['申請人'] || ''), '教材類別': finalCategory, '承辦人員': String(item['製作者'] || '未指定'),
-                        '結案狀態': String(item['狀態'] || '未結案'), '品名': `教材製作 (${finalCategory})`, '總計金額': 0, '年度': year, '月份': month
-                    };
-                });
-
-                trackerData = XLSX.utils.sheet_to_json(workbook.Sheets[s2]).filter(item => {
-                    return item['項目'] || item['科室項目'];
-                }).map(item => {
-                    let pct = 0;
-                    const statusStr = String(item['狀態'] || '').trim();
-                    const progressRaw = String(item['進度百分比'] || '').trim();
-                    
-                    if (statusStr === '已結案' || statusStr === '已完成' || progressRaw.includes('100')) pct = 100;
-                    else if (progressRaw) pct = parseInt(progressRaw.replace(/[^0-9]/g, ''), 10) || 50;
-                    else pct = 50;
-
-                    return {
-                        '科室項目': item['項目'] || item['科室項目'] || '未命名項目',
-                        '目前進度說明': item['備註說明'] || item['目前進度說明'] || '暫無進度說明',
-                        '承辦人': item['參與人員'] || item['承辦人'] || '未分派',
-                        '進度百分比': pct,
-                        '預定完成日': cleanDateStr(item['預定完成日'])
-                    };
-                });
+                const localJson = {
+                    sheet1Data: XLSX.utils.sheet_to_json(workbook.Sheets[s1]),
+                    sheet2Data: XLSX.utils.sheet_to_json(workbook.Sheets[s2])
+                };
                 
-                document.getElementById('dropzone').classList.add('hidden');
-                document.getElementById('dashboardArea').classList.remove('hidden');
-                initFilters(); applyFilters(); renderTrackerCards();
+                processAndRenderData(localJson);
             };
             reader.readAsBinaryString(file);
         }
 
         function loadDemoData() {
-            allData = [
-                { '申請單號': 'A2026001', '院區': '永康總院', '建立日期': '2026-03-05', '需用日期': '2026-03-20', '完成日期': '2026-03-18', '科室': '護理部', '申請人': '王護理長', '教材類別': '衛教單張', '承辦人員': '林雨蕎', '結案狀態': '已結案', '品名': '教材製作 (衛教單張)', '總計金額': 0, '年度': '2026', '月份': '3' },
-                { '申請單號': 'A2026002', '院區': '柳營院區', '建立日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '科室': '小兒科', '申請人': '李醫師', '教材類別': '2, 3', '承辦人員': '前離職同仁測試', '結案狀態': '進行中', '品名': '教材製作 (標示宣傳、醫學海報)', '總計金額': 0, '年度': '2026', '月份': '3' }
-            ];
-            trackerData = [
-                { '科室項目': '護理部電子報 2026春季版', '目前進度說明': '排版中，已套用新春視覺。', '承辦人': '林雨蕎', '進度百分比': 100, '預定完成日': '2026-04-15' }
-            ];
-            document.getElementById('dropzone').classList.add('hidden');
-            document.getElementById('dashboardArea').classList.remove('hidden');
-            initFilters(); applyFilters(); renderTrackerCards();
+            const demoJson = {
+                sheet1Data: [
+                    { '申請單號': 'A2026001', '院區': '永康總院', '申請日期': '2026-03-05', '需用日期': '2026-03-20', '完成日期': '2026-03-18', '單位代碼': '護理部', '申請人': '王護理長', '教材類別': '4', '製作者': '林雨蕎', '狀態': '已結案' },
+                    { '申請單號': 'A2026002', '院區': '柳營院區', '申請日期': '2026-03-12', '需用日期': '2026-03-25', '完成日期': '', '單位代碼': '小兒科', '申請人': '李醫師', '教材類別': '2, 3', '製作者': '前離職同仁測試', '狀態': '進行中' }
+                ],
+                sheet2Data: [
+                    { '科室項目': '護理部電子報 2026春季版', '目前進度說明': '排版中，已套用新春視覺。', '承辦人': '林雨蕎', '進度百分比': '100', '預定完成日': '2026-04-15' }
+                ]
+            };
+            processAndRenderData(demoJson);
         }
 
         // ==========================================
